@@ -1,0 +1,64 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    # Run on all three because the plugin claims to behave identically
+    # anywhere Python runs, and path handling is the obvious place for that
+    # claim to be wrong. The boundary checks compare paths without touching
+    # the filesystem for exactly this reason; this is what verifies it.
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.10", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install pytest
+        # pytest only. If anything else is ever needed here, the plugin has
+        # acquired a dependency and the portability claim in the README has
+        # stopped being true.
+        run: python -m pip install --quiet pytest
+
+      - name: Run the tests
+        run: python -m pytest skills/zepteach/tests -q
+
+      - name: Check nothing third-party crept into the scripts
+        run: |
+          python - <<'PY'
+          import pathlib, re, sys
+          stdlib = {
+              "argparse", "json", "re", "sys", "os", "math", "zipfile",
+              "subprocess", "tempfile", "shutil", "posixpath", "shlex",
+              "unicodedata", "datetime", "pathlib", "collections", "xml",
+              "__future__", "typing", "io", "csv", "itertools", "textwrap",
+          }
+          bad = []
+          scripts = pathlib.Path("skills/zepteach/scripts")
+          for p in scripts.glob("*.py"):
+              for line in p.read_text(encoding="utf-8").splitlines():
+                  m = re.match(r"^(?:import|from)\s+([A-Za-z_]\w*)", line)
+                  if not m:
+                      continue
+                  mod = m.group(1)
+                  if mod in stdlib or (scripts / (mod + ".py")).exists():
+                      continue
+                  bad.append(f"{p.name}: {mod}")
+          if bad:
+              print("third-party import in a shipped script:")
+              print("\n".join(bad))
+              sys.exit(1)
+          print("no third-party imports")
+          PY
