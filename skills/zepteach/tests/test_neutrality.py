@@ -155,9 +155,19 @@ class TestNothingHasToBeInstalled:
     def test_the_readme_still_says_so(self):
         """If the property is ever dropped deliberately, the claim has to go
         with it. A README promising no dependencies while the code has them
-        is worse than either."""
-        s = (PLUGIN / "README.md").read_text(encoding="utf-8")
-        assert "No dependencies" in s
+        is worse than either.
+
+        Matched on substance rather than one phrasing. The first version
+        looked for an exact sentence and failed the moment the README was
+        reworded, which taught nothing except that the test was brittle.
+        """
+        s = (PLUGIN / "README.md").read_text(encoding="utf-8").lower()
+        claims = ("no dependencies", "no packages",
+                  "nothing else. no packages")
+        assert any(c in s for c in claims), (
+            "the README no longer states that nothing has to be installed. "
+            "If that property was dropped on purpose, remove this test "
+            "along with it; if it was not, put the claim back")
 
 
 class TestNoSyllabusShips:
