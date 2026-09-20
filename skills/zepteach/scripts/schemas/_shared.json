@@ -1,0 +1,45 @@
+{
+  "_comment": "Enum values shared by several schemas, defined ONCE. A schema refers to one with {\"$shared\": \"<name>\"} and zt_state.load_schema expands it. Copying an enum into four files is how the discipline leak happened: the same eleven-value form enum lived in exercise, attempt, curriculum and capabilities, so nothing kept them honest.",
+  "cognitive_action": {
+    "enum": [
+      "recall",
+      "derive",
+      "apply",
+      "construct",
+      "analyze",
+      "critique",
+      "explain_back"
+    ],
+    "description": "What the learner's mind is doing, never what their hands are doing. The core knows these seven and nothing else; a domain adapter maps its own activities onto them, so that running a simulation and doing a close reading are describable in one vocabulary and a new discipline needs no change here. recall: bring back what is already held. derive: get from premises to a conclusion. apply: use a known method on a new instance. construct: build something that did not exist - a model, an argument, a design. analyze: take an existing object apart to find its structure. critique: judge an existing object with stated grounds. explain_back: say it back unaided, which principle 6 requires and every discipline can do."
+  },
+  "grader_kind": {
+    "enum": [
+      "exact",
+      "numeric",
+      "checker",
+      "rubric"
+    ],
+    "description": "How an answer is judged. exact: string or structural match. numeric: a value within a tolerance. checker: run a program and read its exit code and output - the program is supplied by an adapter and the core never knows what it inspects. rubric: judged against written criteria by the grader agent. Discipline-specific checkers (a log parser, a trajectory reader, a test runner) are all the checker kind with an adapter-registered id; naming one in this file would put a discipline back into the core."
+  },
+  "reach_level": {
+    "enum": [
+      "direct",
+      "learner_run",
+      "stand_in",
+      "setup_only",
+      "out_of_reach"
+    ],
+    "description": "How close practice gets to the real thing when the thing practice must land on is not fully within reach. Ordered from closest to furthest. direct: the target is at hand and the system works on it. learner_run: the learner does it outside the system and brings the product back. stand_in: a minimal substitute is constructed for the occasion, declaring what it models and where it fails. setup_only: the learner specifies the whole thing and defends each choice without carrying it out. out_of_reach: no rung applies, which blocks the practice rather than quietly replacing it with something easier."
+  },
+  "transfer_dimension": {
+    "enum": [
+      "knowledge_domain",
+      "physical_context",
+      "temporal_context",
+      "functional_context",
+      "social_context",
+      "modality"
+    ],
+    "description": "Which way a transfer test moves away from the setting the material was learned in. Barnett and Ceci's six context dimensions, used here because 'test it in a new context' is not a specification and cannot be checked. knowledge_domain: a different subject or sub-field. physical_context: a different place or medium of work. temporal_context: after a long enough gap that the learning episode is no longer being recalled as an episode. functional_context: academic exercise versus a real situation with real stakes. social_context: alone versus explaining to or arguing with someone. modality: a different form, such as reading it versus saying it versus drawing it."
+  }
+}

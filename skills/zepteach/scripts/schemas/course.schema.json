@@ -1,0 +1,321 @@
+{
+  "$id": "course",
+  "title": "Course definition",
+  "description": "One course. The environment block is setup stage 2: it is filled in AFTER the learner decides what to study, and a lesson cannot start until environment.completed_at exists.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "course_id",
+    "slug",
+    "title",
+    "goal",
+    "domain",
+    "status",
+    "depth_policy",
+    "environment"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "course_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "goal": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What the learner must be able to DO at the end. Written as a capability, not a topic list."
+    },
+    "created": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "enum": [
+        "planning",
+        "active",
+        "paused",
+        "done",
+        "abandoned"
+      ]
+    },
+    "teaching_language": {
+      "type": "string",
+      "minLength": 2,
+      "description": "Overrides config.teaching_language for this course only."
+    },
+    "domain": {
+      "type": "string",
+      "minLength": 1
+    },
+    "deadline": {
+      "type": "string",
+      "format": "date",
+      "description": "Absolute date. Progress drift is computed against it every session open."
+    },
+    "weekly_minutes": {
+      "type": "integer",
+      "minimum": 10
+    },
+    "depth_policy": {
+      "type": "object",
+      "required": [
+        "default_depth_target"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "default_depth_target": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "description": "1 can-use, 2 can-compute, 3 can-derive, 4 can-critique, 5 can-create."
+        },
+        "allow_depth_raise": {
+          "type": "boolean",
+          "description": "If false, going past a concept depth_target is refused outright."
+        },
+        "raise_requires_sidequest": {
+          "type": "boolean",
+          "description": "If true, exceeding depth_target must be split into a sidequest rather than expanding the main line."
+        }
+      }
+    },
+    "source_anchored": {
+      "type": "boolean",
+      "description": "If true, no lesson may be taught without reading its mapped source span first."
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "source_id values registered in sources/index.json."
+    },
+    "agent_models": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sidequest_tutor": {
+          "type": "string"
+        },
+        "grader": {
+          "type": "string"
+        },
+        "curriculum_architect": {
+          "type": "string"
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "description": "SETUP STAGE 2. Filled after the study goal is fixed. Records what this course's practice has to act on, how close we can actually get to each, and what the learner may want to obtain. Nothing here is assumed by the plugin; it is all established by asking and checking.",
+      "required": [
+        "required_targets"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "completed_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Absent means stage 2 has not run. Lessons are gated on this."
+        },
+        "capabilities_probed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "resolution": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "target_id",
+              "reach"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "target_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reach": {
+                "$shared": "reach_level"
+              },
+              "depth_ceiling": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5
+              },
+              "where": {
+                "type": "string",
+                "description": "Free text, in the learner's words: where this is, or who does it."
+              },
+              "what_is_lost": {
+                "type": "string",
+                "description": "REQUIRED when reach is not direct."
+              },
+              "chosen_by_learner": {
+                "type": "boolean"
+              },
+              "note": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "recommendations": {
+          "type": "array",
+          "description": "Concrete things to install or arrange, produced by the probe. Shown to the user; never acted on automatically.",
+          "items": {
+            "type": "object",
+            "required": [
+              "target_id",
+              "action"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "type": "string"
+              },
+              "detail": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "target_id": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "required_targets": {
+          "type": "array",
+          "description": "Declared by this course's adapter from the goal. What practice has to land on.",
+          "items": {
+            "type": "object",
+            "required": [
+              "target_id",
+              "criticality"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "target_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "kind": {
+                "type": "string",
+                "description": "The adapter's own word for what sort of thing this is. Left free deliberately: a primary text, a corpus, a solver and an instrument are all legitimate, and enumerating them here would smuggle a discipline back into the core."
+              },
+              "named_in_goal": {
+                "type": "boolean",
+                "description": "True when the goal itself names this target, so competence WITH IT is part of what is being learned. This is the ruling that decides whether a shortfall is fatal: to explain how a technique organises time, a constructed stand-in serves; to read a particular chapter closely, no imitation of it will do. Set by reading the goal, not by how hard the target is to get."
+              },
+              "why": {
+                "type": "string",
+                "description": "Which practice depends on it."
+              },
+              "criticality": {
+                "enum": [
+                  "required",
+                  "preferred",
+                  "optional"
+                ]
+              }
+            }
+          }
+        },
+        "depth_concessions": {
+          "type": "array",
+          "description": "Concepts whose depth target was lowered because practice could not reach far enough. Kept permanently and surfaced in progress reports: the alternative is quietly swapping in easier work and calling the course complete, which is the failure this system exists to prevent.",
+          "items": {
+            "type": "object",
+            "required": [
+              "concept_id",
+              "from_depth",
+              "to_depth",
+              "reason"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "concept_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "from_depth": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5
+              },
+              "to_depth": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              },
+              "decided_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      }
+    },
+    "adapter_ref": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Path, relative to the data root, of the adapter generated for this course. Adapters are produced at course setup from the goal and what is actually within reach, and they live with the learner's data, not in the plugin. There is deliberately no list of permitted disciplines here: a fixed enum of subject names is the same mistake as assuming which software a machine has."
+    },
+    "milestones": {
+      "type": "array",
+      "description": "Near-term checkpoints between now and the deadline, each written as a capability the same way the goal is. Goal-setting research finds specific, challenging, proximal goals outperform a single distant one on complex work, and progress drift is computed against the nearest one rather than against the end date, which is too far away to correct against.",
+      "items": {
+        "type": "object",
+        "required": [
+          "date",
+          "capability"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "capability": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the learner will be able to DO by this date. Not a topic covered."
+          },
+          "met_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "application_scenario": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Where this learner expects to actually use what they learn, in their own words and as specifically as they can manage. Asked, never assumed. This is what practice is designed around: the things practice acts on are derived from this scenario rather than from what the field conventionally uses, because two people studying the same subject for different purposes need to practise on different things. Someone who will argue about a text in a seminar and someone who will cite it in a thesis are not doing the same exercise, even in the same course."
+    }
+  }
+}

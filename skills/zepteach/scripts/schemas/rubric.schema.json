@@ -1,0 +1,75 @@
+{
+  "$id": "rubric",
+  "title": "Marking criteria for one kind of open-ended item",
+  "description": "Written before the answer exists. That order is the whole point: criteria decided after reading an answer will be shaped by the answer, and the shaping runs one way, towards accepting it. A rubric is also what the marking subagent receives instead of the teaching transcript, so it has to be complete on its own - it is read by something that does not know the learner, did not see the lesson, and has no way to fill a gap from context.",
+  "type": "object",
+  "required": ["schema_version", "rubric_id", "applies_to", "criteria"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "rubric_id": {"type": "string", "minLength": 1},
+    "applies_to": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What kind of answer this marks, stated so a marker who has seen nothing else can tell whether it is the right rubric."
+    },
+    "created": {"type": "string", "format": "date-time"},
+
+    "criteria": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Each one must be decidable from the answer alone. A criterion that requires knowing what was taught cannot be applied by a marker who did not see the teaching, which is every marker here.",
+      "items": {
+        "type": "object",
+        "required": ["criterion_id", "requires", "evidence_looks_like"],
+        "additionalProperties": false,
+        "properties": {
+          "criterion_id": {"type": "string", "minLength": 1},
+          "requires": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the answer has to contain or do. Written as something observable, not as a quality: 'states when the approximation stops holding', not 'shows good understanding'."
+          },
+          "evidence_looks_like": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What a passing answer would actually say. Present so that a marker deciding this criterion is met has something concrete to compare against, and so that a pass which cannot quote anything resembling this is visibly wrong."
+          },
+          "common_miss": {
+            "type": "string",
+            "description": "The way answers usually fail this criterion. Often the most useful line in the rubric: it names the near-miss that reads as correct."
+          },
+          "weight": {"type": "number", "minimum": 0},
+          "required_for_pass": {
+            "type": "boolean",
+            "description": "When true, missing this fails the item regardless of everything else. Use for the criteria the item exists to test; without any, a confident answer that misses the point can accumulate enough partial credit to pass."
+          },
+          "depth": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "The depth an answer meeting this criterion demonstrates. Lets a verdict say what was actually shown rather than what the item hoped for."
+          }
+        }
+      }
+    },
+
+    "pass_threshold": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Fraction of weighted criteria needed, on top of every required_for_pass criterion being met. Both conditions, never either."
+    },
+
+    "not_evidence": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Things that must not be counted as meeting a criterion: restating the question, using the right terms without the reasoning, arriving at the right number by a wrong route, agreeing with something the marker said. Listed because each of these reads as competence."
+    },
+
+    "refuse_to_guess": {
+      "type": "boolean",
+      "description": "Default true. When the answer is too incomplete to judge, the verdict is that it cannot be judged and why, never a charitable reading. A charitable reading is how an unearned pass enters the record, and once recorded it schedules reviews as though the material were known."
+    }
+  }
+}

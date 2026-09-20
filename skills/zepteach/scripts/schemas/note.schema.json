@@ -1,0 +1,29 @@
+{
+  "$id": "note",
+  "title": "Canonical concept note frontmatter",
+  "description": "The canonical layer. One note per concept, rewritten in place, never appended to. Session chatter goes to the journal instead, so notes stay readable months later instead of turning into a running log.",
+  "type": "object",
+  "required": ["schema_version", "concept_id", "title", "course_id", "sections", "updated"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "concept_id": {"type": "string", "minLength": 1},
+    "title": {"type": "string", "minLength": 1},
+    "course_id": {"type": "string", "minLength": 1},
+    "depth_target": {"type": "integer", "minimum": 1, "maximum": 5},
+
+    "sections": {
+      "type": "array",
+      "minItems": 6,
+      "items": {"type": "string"},
+      "description": "Headings actually present in the body. Validation requires all six required sections from note_doctrine: definition, why-needed, mechanism, boundaries-and-misconceptions, relation-to-neighbours, worked-example-pointer."
+    },
+
+    "links": {"type": "array", "items": {"type": "string"}, "description": "concept_id values wiki-linked in the body. Builds the concept map."},
+    "source_refs": {"type": "array", "items": {"type": "string"}, "description": "Citations into registered material, e.g. Strang 6.1 p.288."},
+    "exercise_refs": {"type": "array", "items": {"type": "string"}},
+    "created": {"type": "string", "format": "date-time"},
+    "updated": {"type": "string", "format": "date-time"},
+    "rewrite_count": {"type": "integer", "minimum": 0, "description": "How many times this note has been rewritten in place. Appends are not a thing."}
+  }
+}

@@ -1,0 +1,171 @@
+{
+  "$id": "exercise",
+  "title": "Exercise item",
+  "description": "An exercise cannot be issued without a grading spec. Three tiers exist per lesson: anchored (taken from an external source with a real answer), variant (changed conditions, still mechanically checkable), modeling (open, rubric-judged).",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "exercise_id",
+    "course_id",
+    "concept_ids",
+    "prompt",
+    "grader"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "exercise_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "course_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "lesson_id": {
+      "type": "string"
+    },
+    "concept_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "tier": {
+      "enum": [
+        "anchored",
+        "variant",
+        "modeling"
+      ],
+      "description": "anchored: a real problem lifted from an external source, so its difficulty is not self-assessed. variant: parameters or conditions changed, still mechanically checkable. modeling: a real situation the learner must set up themselves, judged by rubric. Required for everything except an explain-back, which is not drawn from a source, not a variant of one, and not an open-ended task, so no tier describes it."
+    },
+    "form": {
+      "$shared": "cognitive_action"
+    },
+    "prompt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "anchor_kind": {
+      "enum": [
+        "textbook",
+        "paper",
+        "official_doc",
+        "course_assignment",
+        "benchmark"
+      ],
+      "description": "REQUIRED for the anchored tier. What kind of external source fixes this item's difficulty. A course with no textbook still anchors: a derivation in the original paper, the semantics in official documentation, a public course assignment, or a published benchmark number. What is never allowed is an anchored-tier item the system invented and then called hard."
+    },
+    "source_ref": {
+      "type": "string",
+      "description": "REQUIRED for the anchored tier. Precise enough to find again, e.g. Strang 6.1 problem 14 p.288, or Vaswani 2017 eq.(1) sec.3.2.1, or CS231n assignment 2 Q4."
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Scaffold files handed to the learner (starter code, input decks, data)."
+    },
+    "grader": {
+      "type": "object",
+      "description": "HARD GATE. No grading spec means the item may not be issued.",
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "$shared": "grader_kind"
+        },
+        "checker_id": {
+          "type": "string",
+          "description": "REQUIRED when type is checker. Names a checker the course adapter registered. The core runs it and reads its verdict; it does not know what the checker inspects, which is what keeps any one discipline out of this file."
+        },
+        "spec": {
+          "type": "object",
+          "description": "Grader-specific payload: expected value and tolerance, test file path, log keys to parse, observable ranges, rubric id."
+        },
+        "tolerance": {
+          "type": "number",
+          "minimum": 0
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "rubric_id": {
+      "type": "string",
+      "description": "Required when grader.type is rubric. Modeling-tier items always need one."
+    },
+    "answer_key": {
+      "type": "string",
+      "description": "Kept out of anything sent to the learner. Sent to the grader agent."
+    },
+    "capability_required": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "capability_id values this item needs in order to run for real."
+    },
+    "degraded_form": {
+      "type": "object",
+      "description": "What this item becomes when the capability is missing. Chosen from capabilities.json, never improvised mid-lesson.",
+      "additionalProperties": false,
+      "properties": {
+        "prompt": {
+          "type": "string"
+        },
+        "grader": {
+          "type": "object"
+        },
+        "rubric_id": {
+          "type": "string"
+        }
+      }
+    },
+    "expected_minutes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "created": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "depth": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "The depth this item probes. An item deeper than the concept depth_target may not be issued on the main line; that is what a sidequest or an explicit raise is for."
+    },
+    "interleaved": {
+      "type": "boolean",
+      "description": "Part of a mixed drill. The prompt must not say which concept or method it belongs to - that choice is the thing being practised, and revealing it turns the item back into blocked practice."
+    },
+    "transfer_dimensions": {
+      "type": "array",
+      "items": {
+        "$shared": "transfer_dimension"
+      },
+      "description": "REQUIRED when this item is used as a transfer test. Naming the dimension is what makes the claim checkable. The criterion this replaces - an open-ended item, or one spanning two concepts - moves only along knowledge_domain, which is why an item that names only that dimension is treated as the weak case and warned about."
+    },
+    "mixed_from": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "lesson_id values this item was drawn across when it belongs to a mixed set. Recorded so that a drill claiming to mix can be checked: drawing several items from one lesson is not mixing, because the lesson itself tells the learner which method applies."
+    },
+    "reveals_method": {
+      "type": "boolean",
+      "description": "True when the wording tells the learner which method or concept to use. Harmless in a single-topic set and fatal in a mixed one: choosing the method is the thing a mixed set practises, so revealing it turns the item back into single-topic practice while still looking mixed."
+    }
+  }
+}

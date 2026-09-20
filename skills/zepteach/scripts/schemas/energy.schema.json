@@ -1,0 +1,25 @@
+{
+  "$id": "energy",
+  "title": "Energy and load log (one JSONL line per session)",
+  "description": "Lets the system notice that the learner is fading instead of pushing on, and lets it plan realistic sessions from history rather than from optimism.",
+  "type": "object",
+  "required": ["schema_version", "ts", "session_id", "declared_energy"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "ts": {"type": "string", "format": "date-time"},
+    "session_id": {"type": "string", "minLength": 1},
+    "course_id": {"type": "string"},
+    "declared_energy": {"enum": ["low", "normal", "high"]},
+    "minutes_planned": {"type": "integer", "minimum": 0},
+    "minutes_actual": {"type": "integer", "minimum": 0},
+    "concepts_planned": {"type": "integer", "minimum": 0},
+    "concepts_done": {"type": "integer", "minimum": 0},
+    "attempts_total": {"type": "integer", "minimum": 0},
+    "attempts_failed": {"type": "integer", "minimum": 0},
+    "error_rate_first_half": {"type": "number", "minimum": 0, "maximum": 1},
+    "error_rate_second_half": {"type": "number", "minimum": 0, "maximum": 1},
+    "fatigue_detected": {"type": "boolean", "description": "Set when the second-half error rate rises materially above the first half, or answers get markedly shorter."},
+    "ended_reason": {"enum": ["completed", "budget_reached", "fatigue", "learner_stopped", "blocked", "crashed"]}
+  }
+}

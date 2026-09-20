@@ -1,0 +1,205 @@
+{
+  "$id": "curriculum",
+  "title": "Course curriculum (module / lesson / concept DAG)",
+  "description": "Produced by the curriculum architect agent. Every concept carries its own depth target and, for a source-anchored course, the exact span of the book it is taught from.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "course_id",
+    "modules"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "course_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "updated": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "modules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "module_id",
+          "title",
+          "lessons"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "module_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "goal": {
+            "type": "string"
+          },
+          "lessons": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": [
+                "lesson_id",
+                "title",
+                "concepts"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "lesson_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "estimated_minutes": {
+                  "type": "integer",
+                  "minimum": 5,
+                  "maximum": 480
+                },
+                "scheduled_for": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "source_span": {
+                  "$ref": "#/$defs/source_span"
+                },
+                "concepts": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "$ref": "#/$defs/concept"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "source_span": {
+      "type": "object",
+      "description": "Where in the registered material this is taught from. Required per lesson when the course is source_anchored.",
+      "required": [
+        "source_id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "chapter": {
+          "type": "string"
+        },
+        "section": {
+          "type": "string"
+        },
+        "heading": {
+          "type": "string"
+        },
+        "page_start": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "page_end": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "timecode_start": {
+          "type": "string",
+          "description": "For video sources, hh:mm:ss."
+        },
+        "timecode_end": {
+          "type": "string"
+        }
+      }
+    },
+    "concept": {
+      "type": "object",
+      "required": [
+        "concept_id",
+        "title",
+        "depth_target"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "concept_id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9-]*([.][a-z0-9][a-z0-9_-]*)+$",
+          "description": "Globally unique and namespaced as <field>.<concept>. Must exist in the global concept registry. Two courses using the same id are deliberately talking about the same thing and share mastery, notes and review."
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "depth_target": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "description": "1 can-use, 2 can-compute, 3 can-derive, 4 can-critique, 5 can-create. This is the ceiling AND the floor: shallower blocks progression, deeper needs an explicit raise."
+        },
+        "prereq": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Globally unique concept ids. May point at a concept taught by another course; that is the point of a global registry."
+        },
+        "external_prereq": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Background assumed but not taught here. Candidates for a sidequest when a probe fails."
+        },
+        "source_span": {
+          "$ref": "#/$defs/source_span"
+        },
+        "exercise_types": {
+          "type": "array",
+          "items": {
+            "$shared": "cognitive_action"
+          },
+          "description": "Which forms are appropriate. The engine still enforces all three difficulty tiers."
+        },
+        "modeling_prompt": {
+          "type": "string",
+          "description": "Seed for the top tier: a real situation the learner must model from scratch."
+        },
+        "keywords": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "common_misconceptions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

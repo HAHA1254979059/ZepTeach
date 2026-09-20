@@ -1,0 +1,47 @@
+{
+  "$id": "assessment",
+  "title": "Stage assessment result",
+  "description": "A graded checkpoint over a set of concepts. Scores come from attempt rows, so the report cannot be more generous than the evidence.",
+  "type": "object",
+  "required": ["schema_version", "assessment_id", "course_id", "date", "scope_concepts", "by_concept"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "assessment_id": {"type": "string", "minLength": 1},
+    "course_id": {"type": "string", "minLength": 1},
+    "date": {"type": "string", "format": "date-time"},
+    "scope_concepts": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "attempt_ids": {"type": "array", "items": {"type": "string"}},
+    "score": {"type": "number"},
+    "max_score": {"type": "number"},
+    "by_concept": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["concept_id", "verdict"],
+        "additionalProperties": false,
+        "properties": {
+          "concept_id": {"type": "string"},
+          "verdict": {"enum": ["pass", "partial", "fail"]},
+          "depth_demonstrated": {"type": "integer", "minimum": 0, "maximum": 5},
+          "evidence_quotes": {"type": "array", "items": {"type": "string"}},
+          "failure_points": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "objective_metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "first_try_pass_rate": {"type": "number", "minimum": 0, "maximum": 1},
+        "delayed_retention_rate": {"type": "number", "minimum": 0, "maximum": 1, "description": "Share of delayed retests passed. The honest number."},
+        "transfer_pass_rate": {"type": "number", "minimum": 0, "maximum": 1},
+        "modeling_tier_pass_rate": {"type": "number", "minimum": 0, "maximum": 1},
+        "lapse_count": {"type": "integer", "minimum": 0},
+        "median_days_to_mastered": {"type": "number", "minimum": 0}
+      }
+    },
+    "report_path": {"type": "string"}
+  }
+}

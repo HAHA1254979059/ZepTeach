@@ -1,0 +1,166 @@
+{
+  "$id": "attempt",
+  "title": "Attempt record (one JSONL line per graded item)",
+  "description": "The only source of truth for how the learner is actually doing. Progress reports are computed from these rows, never from the tutor's impression.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "attempt_id",
+    "course_id",
+    "exercise_id",
+    "concept_ids",
+    "kind",
+    "verdict",
+    "graded_by",
+    "submitted_at"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "attempt_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "course_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "lesson_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "exercise_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "concept_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      },
+      "description": "Globally unique namespaced concept ids."
+    },
+    "kind": {
+      "enum": [
+        "probe",
+        "inclass",
+        "delayed_retest",
+        "transfer_test",
+        "assessment"
+      ]
+    },
+    "tier": {
+      "enum": [
+        "anchored",
+        "variant",
+        "modeling"
+      ],
+      "description": "Exercise difficulty tier. Absent for a probe or an explain-back, which are not exercises."
+    },
+    "issued_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "graded_by": {
+      "type": "string",
+      "minLength": 1,
+      "description": "script:<grader name>, agent:zt-grader, or manual. The teaching persona never appears here."
+    },
+    "verdict": {
+      "enum": [
+        "pass",
+        "partial",
+        "fail"
+      ]
+    },
+    "score": {
+      "type": "number"
+    },
+    "max_score": {
+      "type": "number"
+    },
+    "evidence_quotes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "NO-LENIENCY RULE. A pass verdict must quote the specific lines in the learner answer that earned it. If nothing can be quoted, the verdict is not a pass. Enforced by semantic validation, not by prompt."
+    },
+    "failure_points": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "grader_raw_path": {
+      "type": "string",
+      "description": "Path to raw grader output or run log, kept for audit."
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "where": {
+          "type": "string",
+          "description": "Free text, in the learner's words: where this was actually carried out. The plugin holds no list of kinds of place."
+        },
+        "degraded": {
+          "type": "boolean",
+          "description": "True when the exercise ran in a fallback form because a capability was missing."
+        },
+        "seconds": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "latency_rating": {
+      "enum": [
+        "instant",
+        "fluent",
+        "effortful",
+        "recovered_with_hint"
+      ],
+      "description": "How hard the recall was, not just whether it landed. Main input to the next review interval."
+    },
+    "latency_source": {
+      "enum": [
+        "inferred",
+        "learner_stated",
+        "learner_corrected"
+      ],
+      "description": "Zep infers this by default and says so out loud; the learner can overrule it, which is recorded as learner_corrected."
+    },
+    "depth_demonstrated": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "What depth this item actually proved: 1 can-use, 2 can-compute, 3 can-derive, 4 can-critique, 5 can-create. Without it the depth ceiling cannot be enforced, because nothing says how deep the learner went."
+    },
+    "form": {
+      "$shared": "cognitive_action"
+    },
+    "interleaved": {
+      "type": "boolean",
+      "description": "True when the item came from a mixed drill where the prompt did not reveal which method applies."
+    },
+    "transfer_dimensions": {
+      "type": "array",
+      "items": {
+        "$shared": "transfer_dimension"
+      },
+      "description": "Copied from the item. Without it, a recorded transfer pass is an unfalsifiable claim about what the learner can now do."
+    }
+  }
+}

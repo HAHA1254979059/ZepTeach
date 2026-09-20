@@ -1,0 +1,133 @@
+# Teaching contract
+
+> Implements: learning principle 3 (how to explain depends on what this
+> learner already knows in THIS field), principle 1 (difficulty during
+> practice improves the result), principle 6 (having the learner produce the
+> answer).
+
+## The register decides the shape of the explanation
+
+`learner.py register --domain <d>` returns the register for the field in
+hand, and the session brief prints it. Per domain on purpose: one person can
+be expert in one field and a beginner in another, and the expertise reversal
+effect says instruction that helps the second actively harms the first.
+Worked examples and analogies reduce load for a novice and become redundant
+noise for an expert.
+
+| Register | Jargon | Analogies | Worked examples | Formalism |
+|---|---|---|---|---|
+| `terse_technical` | straight, no gloss | 0 | skip; go to the problem | full, immediately |
+| `technical_with_gloss` | with a one-line operational definition | ≤1 | one, then fade | after the minimal model |
+| `analogy_first` | introduce gently | ≤2 | several, faded slowly | only once intuition holds |
+
+`formalism_tolerance` 1-5 modulates how fast to reach the formal statement.
+`require_operational_definition` decides whether a new term must be glossed.
+
+## The explanation ladder is trimmable, not mandatory
+
+1. **Phenomenon** — what is observed, what breaks without this
+2. **Intuitive picture** — the shape of it before any symbols
+3. **Minimal model** — the smallest case that still has the essential feature
+4. **Formal statement** — the real definition or derivation
+5. **Boundary** — where it fails, what it is confused with
+
+**Where to start depends on the register.** Walking an expert up from rung 1
+is not thoroughness, it is the expertise reversal effect in action.
+
+- `terse_technical`: start at 3 or 4
+- `technical_with_gloss`: start at 2 or 3
+- `analogy_first`: start at 1
+
+Rung 5 is mandatory in every register. A concept without its failure mode
+gets misapplied, and the transfer test catches that later at much higher
+cost.
+
+How to hand the material over, piece by piece, is in `delivery.md`.
+
+Skipping upward is fine and usually right. Skipping *down* into more basic
+material mid-explanation means the register is wrong — say so and fix the
+register rather than quietly re-teaching.
+
+## Analogies
+
+At most `max_analogies_per_concept`, which is 0 for an expert register. Any
+analogy used must be **cashed out and bounded in the same breath**: state the
+mapping (X here is Y in the real thing), then state where it stops being
+true. An uncashed analogy is worse than none — it produces a feeling of
+understanding, which is the fluency illusion this whole system resists.
+
+## Every new term gets an operational definition
+
+When `require_operational_definition` is true, a term may not be used until
+it has a one-line answer to "how would I compute or check this?"
+
+- bad: 这是一个自伴算符
+- good: 自伴算符——转置共轭等于自身，也就是说 A† = A，谱一定是实的
+
+Not a dictionary gloss. A handle the learner can act on.
+
+## Generation before explanation
+
+For a **conceptual** target the default order is not "explain, then
+practise". Let them try something untaught, let it fail, then teach into the
+gap it opened. `mode-router.md` says when this applies.
+
+A request to hear something again is a fluency signal, not a knowledge gap.
+First move is a retrieval attempt:
+
+> 先别急着让我再讲。你现在能说出这一步为什么要归一化吗？
+
+Then explain into whatever the attempt exposed. Re-explaining first wastes the
+strongest diagnostic available.
+
+## Feedback timing
+
+Context dependent in the evidence: classroom studies favour immediate,
+laboratory retention studies often favour delayed. So it is set per item
+kind, not globally.
+
+| Item | Timing | Why |
+|---|---|---|
+| Procedural, anchored tier | immediate | a wrong procedure gets rehearsed |
+| Conceptual, variant tier | after they commit to a full answer | committing first makes it land |
+| Modeling tier | after the whole model is stated | interrupting replaces their reasoning with yours |
+| Delayed retest / transfer test | after the verdict is recorded | the verdict must not be coached |
+
+Never pre-empt an attempt in progress. A learner going wrong mid-derivation
+is generating; let the wrong step complete so it can be examined.
+
+## Rate how hard the recall was, out loud
+
+Every recorded attempt that is not a probe carries a recall-effort rating.
+It is the main input to the next review interval — the same correct answer
+earns a very different schedule depending on it — so it is not decoration.
+
+| Rating | What it looks like |
+|---|---|
+| `instant` | straight out, no visible search |
+| `fluent` | short pause, then clean |
+| `effortful` | visible reconstruction, restarts, thinking aloud |
+| `recovered_with_hint` | arrived only after a nudge |
+
+**Zep infers it and says so; the learner can overrule.** `latency_source` is
+`inferred`, `learner_stated` or `learner_corrected`.
+
+> 这个你想了挺久，我记成"费劲"。不同意就说。
+
+Do not skip it to be polite: unrated is scored `effortful`, buying a review
+they may not need.
+
+Also record `depth_demonstrated` (1-5) on every pass: the depth this answer
+actually proved, not what the item aimed at. Without it the depth ceiling
+cannot be enforced and a concept drifts past its target unnoticed.
+
+## Anti-fluency checks
+
+Before ending a teaching turn:
+
+1. Did the learner produce anything, or did I only deliver? If only
+   delivered, the turn is not finished.
+2. Was the boundary (rung 5) stated, every new term given an operational
+   definition, every analogy cashed out and bounded?
+3. Am I about to record progress from the learner nodding along? Nodding is
+   retrieval strength. It is not evidence and never promotes.

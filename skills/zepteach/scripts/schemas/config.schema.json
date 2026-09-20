@@ -1,0 +1,219 @@
+{
+  "$id": "config",
+  "title": "ZepTeach global config",
+  "description": "Written by setup stage 1 (identity, notes, teaching language, persona, agent models). Per-course environment preparation is setup stage 2 and lives in course.environment, not here.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "learner_id",
+    "teaching_language",
+    "notes",
+    "persona",
+    "agent_models",
+    "defaults",
+    "setup"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "learner_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "updated": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "teaching_language": {
+      "type": "string",
+      "minLength": 2,
+      "description": "Language ZepTeach teaches in. NEVER defaulted or inferred; setup stage 1 must ask the user. A course may override it."
+    },
+    "setup": {
+      "type": "object",
+      "required": [
+        "stage1_completed_at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "stage1_completed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "stage1_version": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "notes": {
+      "type": "object",
+      "description": "Notes are written twice, for two different readers. The markdown copy is what this plugin reads back: plain text, linkable, diffable, and the thing a later lesson searches to find what was already established. The document copy is what the learner reads: the same content, laid out to be read rather than parsed. Neither is a export of the other at write time; both are produced from the same note, so they cannot drift apart. No particular notes application is assumed. Pointing markdown_dir at a folder some other tool already watches works because it is a folder of markdown files, which is all this plugin needs to know.",
+      "required": [
+        "markdown_dir"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "markdown_dir": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Where the canonical markdown notes live. This is the copy the plugin reads."
+        },
+        "document_dir": {
+          "type": "string",
+          "description": "Where the readable documents go. Absent means the learner only wants the markdown."
+        },
+        "document_format": {
+          "enum": [
+            "docx",
+            "none"
+          ],
+          "description": "docx by default when document_dir is set."
+        },
+        "journal_dir": {
+          "type": "string",
+          "description": "Where the running record of what was discussed goes, kept apart from the canonical notes. Mixing the two is what turns notes into a diary."
+        }
+      }
+    },
+    "persona": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "const": "Zep"
+        },
+        "address_user": {
+          "type": "string",
+          "description": "How Zep addresses the learner. Empty string means no form of address."
+        },
+        "closeness": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "description": "1=formal colleague, 5=close labmate. Affects tone only, NEVER standards."
+        },
+        "banter": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3,
+          "description": "0=none, 3=frequent. Auto-suppressed when declared energy is low."
+        }
+      }
+    },
+    "agent_models": {
+      "type": "object",
+      "required": [
+        "sidequest_tutor",
+        "grader",
+        "curriculum_architect"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "sidequest_tutor": {
+          "type": "string"
+        },
+        "grader": {
+          "type": "string"
+        },
+        "curriculum_architect": {
+          "type": "string"
+        }
+      }
+    },
+    "ocr": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "provider": {
+          "enum": [
+            "deepseek-ocr",
+            "none"
+          ]
+        },
+        "api_key_env": {
+          "type": "string",
+          "description": "NAME of the env var holding the key. The key itself is never stored in this file."
+        },
+        "endpoint": {
+          "type": "string"
+        },
+        "concurrency": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16
+        },
+        "quality_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "defaults": {
+      "type": "object",
+      "required": [
+        "turn_budget",
+        "checkpoint_at",
+        "session_minutes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "turn_budget": {
+          "type": "integer",
+          "minimum": 6,
+          "maximum": 200
+        },
+        "checkpoint_at": {
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 0.95
+        },
+        "hard_stop_at": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 1.0
+        },
+        "session_minutes": {
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 480
+        },
+        "energy": {
+          "enum": [
+            "low",
+            "normal",
+            "high"
+          ]
+        },
+        "delayed_retest_min_days": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "transfer_test_min_days": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "review_cap_per_session": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Most review items one session will take on. A wall of overdue items is the documented reason people abandon spaced repetition, and reviewing late costs very little retention, so the debt is worked off at a steady rate instead of cleared in one sitting."
+        },
+        "retire_after_instant": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 10,
+          "description": "Consecutive instant recalls after which a mastered concept leaves the review queue."
+        }
+      }
+    }
+  }
+}

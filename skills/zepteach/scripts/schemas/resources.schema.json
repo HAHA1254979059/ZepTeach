@@ -1,0 +1,133 @@
+{
+  "$id": "resources",
+  "title": "Materials and tools for one course",
+  "description": "Written once the learner has said what they have, and kept with that course. Two things live here: the material they supplied to learn from, and the tools their environment offers, including how to use each one. Nothing in it is assumed by the plugin. A tool is here because the learner said it exists or a check found it, never because the subject usually involves one. This file is also what project-level integrations are generated from, so that a tool is wired up once rather than re-explained in every lesson.",
+  "type": "object",
+  "required": ["schema_version", "course_id", "updated"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "course_id": {"type": "string", "minLength": 1},
+    "updated": {"type": "string", "format": "date-time"},
+
+    "materials": {
+      "type": "array",
+      "description": "What the learner supplied to study from. Recorded so that a lesson can cite a specific place in a specific edition, and so that difficulty comes from outside this system rather than from its own opinion.",
+      "items": {
+        "type": "object",
+        "required": ["material_id", "title", "kind", "where"],
+        "additionalProperties": false,
+        "properties": {
+          "material_id": {"type": "string", "minLength": 1},
+          "title": {"type": "string", "minLength": 1},
+          "kind": {
+            "type": "string",
+            "minLength": 1,
+            "description": "In the learner's own words: a textbook, a paper, a document collection, a recorded course, a dataset. Free text, because a fixed list would be a list of the subjects somebody thought of."
+          },
+          "where": {
+            "type": "string",
+            "minLength": 1,
+            "description": "A path, a library shelf, a URL, or a sentence saying it is on their desk. Whatever lets it be found again."
+          },
+          "edition": {
+            "type": "string",
+            "description": "Matters more than it looks. A citation to a section number is worthless if two people hold different printings."
+          },
+          "language": {"type": "string"},
+          "indexed": {"type": "boolean", "description": "Whether its structure has been read, so that a lesson can be pointed at a specific span of it."},
+          "usable_pages": {"type": "string", "description": "Where parts of it could not be read reliably, say which. A lesson must not cite a page that was never legible."},
+          "note": {"type": "string"},
+          "added": {"type": "string", "format": "date-time"}
+        }
+      }
+    },
+
+    "tools": {
+      "type": "array",
+      "description": "What the environment offers, and how to use it. Written down once, at the learner's direction, instead of being worked out again in each lesson.",
+      "items": {
+        "type": "object",
+        "required": ["tool_id", "what_it_does", "runs_where"],
+        "additionalProperties": false,
+        "properties": {
+          "tool_id": {"type": "string", "minLength": 1},
+          "what_it_does": {"type": "string", "minLength": 1, "description": "In terms of the work, not the product name. What a learner would use it FOR."},
+          "runs_where": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Free text, supplied by the learner: this machine, a machine they will run it on themselves, a service, a web application. The plugin holds no notion of what kinds of place exist, and invents none."
+          },
+          "reached_how": {
+            "type": "string",
+            "description": "How work actually gets to it, in the learner's words. Where that is something the learner does by hand, say so; a tool the learner operates themselves is a perfectly good entry here and is often the right one."
+          },
+          "invocation": {
+            "type": "object",
+            "description": "Only for something this plugin runs itself. Absent means the learner runs it and brings the result back.",
+            "additionalProperties": false,
+            "properties": {
+              "command": {"type": "array", "items": {"type": "string"}},
+              "workdir": {"type": "string"},
+              "allowed_paths": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "HARD BOUNDARY, set by the learner. Nothing outside these is touched at all, reads included."
+              },
+              "timeout_seconds": {"type": "integer", "minimum": 1},
+              "shared_with_others": {"type": "boolean", "description": "True when other people depend on the same machine or quota. Turns on stating the size of a job before running it."},
+              "size_limit": {"type": "integer", "minimum": 1, "description": "Most of whatever unit this tool measures - cores, workers, concurrent requests - that one piece of work may ask for."},
+              "credentials_env": {"type": "string", "description": "NAME of an environment variable. Never a value. Values do not appear here, on a command line, or in any message."},
+              "credentials_file": {"type": "string", "description": "Path to a file holding connection details, read when needed. Only the path is stored."}
+            }
+          },
+          "how_to_use": {
+            "type": "string",
+            "description": "What the learner told us about using it well: the flags that matter, the mistake everyone makes first, what its output means. This is the part that would otherwise be re-derived every time, badly."
+          },
+          "limits": {"type": "string", "description": "What it cannot do, or what it does misleadingly. Worth as much as the previous field."},
+          "supports_targets": {"type": "array", "items": {"type": "string"}, "description": "target_id values from the course adapter that this tool serves."},
+          "verified_at": {"type": "string", "format": "date-time"},
+          "added_by": {"enum": ["learner", "check"], "description": "Whether the learner said so or a check found it. Both are legitimate; only the learner's word counts for anything the plugin cannot see."}
+        }
+      }
+    },
+
+    "integrations": {
+      "type": "array",
+      "description": "Project-level wiring generated so a tool is usable without re-explaining it. Each entry records what was set up, for which tool, and where it lives, so that it can be found, changed or removed later rather than becoming something nobody remembers configuring.",
+      "items": {
+        "type": "object",
+        "required": ["integration_id", "kind", "for_tools", "path"],
+        "additionalProperties": false,
+        "properties": {
+          "integration_id": {"type": "string", "minLength": 1},
+          "kind": {
+            "enum": ["skill", "mcp", "plugin", "command"],
+            "description": "skill: written instructions plus scripts, for a tool with a procedure worth capturing. mcp: a server already offering this tool. plugin: an existing plugin that covers it. command: a shortcut for something used constantly."
+          },
+          "for_tools": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+          "path": {"type": "string", "minLength": 1, "description": "Where it was written, relative to the project."},
+          "why": {"type": "string", "description": "What this saves. An integration that saves nothing is clutter that still has to be maintained."},
+          "generated_at": {"type": "string", "format": "date-time"},
+          "confirmed_by_learner": {"type": "boolean", "description": "Anything written outside this plugin's own data was shown to the learner first."}
+        }
+      }
+    },
+
+    "declined": {
+      "type": "array",
+      "description": "Things suggested and turned down. Kept so the same suggestion is not made every week, which is its own kind of failure.",
+      "items": {
+        "type": "object",
+        "required": ["what", "when"],
+        "additionalProperties": false,
+        "properties": {
+          "what": {"type": "string", "minLength": 1},
+          "reason": {"type": "string"},
+          "when": {"type": "string", "format": "date-time"}
+        }
+      }
+    }
+  }
+}

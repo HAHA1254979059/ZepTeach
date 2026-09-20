@@ -1,0 +1,81 @@
+{
+  "$id": "sources_index",
+  "title": "Registered study material for one course",
+  "description": "Turns a textbook or course video into addressable spans, so a lesson can be forced to read the actual passage and cite it, instead of teaching from memory.",
+  "type": "object",
+  "required": ["schema_version", "course_id", "sources"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "course_id": {"type": "string", "minLength": 1},
+    "updated": {"type": "string", "format": "date-time"},
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source_id", "kind", "title", "path", "index_status"],
+        "additionalProperties": false,
+        "properties": {
+          "source_id": {"type": "string", "minLength": 1},
+          "kind": {"enum": ["pdf_text", "pdf_scanned", "markdown", "html", "video_transcript", "web"]},
+          "title": {"type": "string", "minLength": 1},
+          "authors": {"type": "array", "items": {"type": "string"}},
+          "edition": {"type": "string"},
+          "path": {"type": "string", "minLength": 1},
+          "language": {"type": "string"},
+          "page_offset": {"type": "integer", "description": "Printed page number minus PDF page index, so citations match the book."},
+
+          "index_status": {"enum": ["pending", "indexed", "partial", "failed"]},
+          "indexed_at": {"type": "string", "format": "date-time"},
+          "ocr": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "used": {"type": "boolean"},
+              "provider": {"type": "string"},
+              "mean_quality": {"type": "number", "minimum": 0, "maximum": 1},
+              "pages_below_threshold": {"type": "array", "items": {"type": "integer"}, "description": "Pages whose OCR quality is too low to cite. Anchoring refuses to quote these."}
+            }
+          },
+
+          "toc": {
+            "type": "array",
+            "description": "Chapter and section map. This is what makes a span addressable.",
+            "items": {
+              "type": "object",
+              "required": ["label", "title"],
+              "additionalProperties": false,
+              "properties": {
+                "label": {"type": "string", "description": "Chapter or section number as printed, e.g. 6.1"},
+                "title": {"type": "string"},
+                "level": {"type": "integer", "minimum": 1, "maximum": 6},
+                "page_start": {"type": "integer", "minimum": 1},
+                "page_end": {"type": "integer", "minimum": 1},
+                "timecode_start": {"type": "string"},
+                "timecode_end": {"type": "string"},
+                "citable": {"type": "boolean", "description": "False when OCR quality for this span is below threshold."}
+              }
+            }
+          },
+
+          "problem_sets": {
+            "type": "array",
+            "description": "Where anchored-tier exercises are lifted from.",
+            "items": {
+              "type": "object",
+              "required": ["label", "page_start"],
+              "additionalProperties": false,
+              "properties": {
+                "label": {"type": "string"},
+                "page_start": {"type": "integer", "minimum": 1},
+                "page_end": {"type": "integer", "minimum": 1},
+                "has_answers": {"type": "boolean"},
+                "answers_location": {"type": "string"}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

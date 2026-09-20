@@ -1,0 +1,127 @@
+{
+  "$id": "capabilities",
+  "title": "What this course's practice can actually land on",
+  "description": "Written during course setup and re-checked periodically. This file answers one question: for each thing this course's practice has to act on, is it within reach, and if not, how close can we get? It is deliberately NOT an inventory of the machine. An earlier version was organised around installed software and machines, which silently assumed the subject was computational; a literature course needs a primary text and a history course needs sources, and neither has anything to do with what is on PATH. What the environment happens to offer is recorded in the course resources file instead, as one kind of answer rather than the shape of the question.",
+  "type": "object",
+  "required": ["schema_version", "checked_at", "targets", "practice_support"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "checked_at": {"type": "string", "format": "date-time"},
+    "probe_version": {"type": "integer", "minimum": 1},
+
+    "targets": {
+      "type": "array",
+      "description": "One entry per thing this course's practice must act on, as declared by the course adapter.",
+      "items": {
+        "type": "object",
+        "required": ["target_id", "kind", "reach"],
+        "additionalProperties": false,
+        "properties": {
+          "target_id": {"type": "string", "minLength": 1},
+          "kind": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What sort of thing this is, in the adapter's own words: a primary text, a corpus, a solver, an instrument, a conversation partner. FREE TEXT ON PURPOSE. Any fixed list here would become the next hard-coded discipline, exactly as a grader enum once named two specific chemistry programs. The core only needs to know how close we can get, not what it is."
+          },
+          "reach": {"$shared": "reach_level"},
+          "depth_ceiling": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "Deepest concept depth this level of reach can honestly certify. A stand-in can carry understanding a long way but cannot certify competence with the real instrument, so this is the number the depth gate compares against."
+          },
+          "where": {"type": "string", "description": "Free text, in the learner's words: where this is, or who does it. The plugin invents no categories of place."},
+          "verified": {
+            "type": "boolean",
+            "description": "Whether it was actually exercised, not merely named. A name proves nothing: on many Linux systems /usr/bin/orca is the GNOME screen reader rather than the quantum chemistry package, and an edition of a text may be an abridgement."
+          },
+          "verify_note": {"type": "string"},
+          "impostor": {"type": "boolean", "description": "The name matches but the thing is something else. Recorded so it is not rediscovered every week."},
+          "what_is_lost": {
+            "type": "string",
+            "description": "REQUIRED whenever reach is not direct. Names what the learner no longer has to decide, in this subject's terms. Degrading has to stay honest about what it removed, or it becomes the pretence of having practised."
+          },
+          "chosen_by_learner": {"type": "boolean", "description": "The learner was offered the levels with their costs and picked this one."},
+          "checked_at": {"type": "string", "format": "date-time"}
+        }
+      }
+    },
+
+    "practice_support": {
+      "type": "array",
+      "description": "Derived from targets: which cognitive actions this course can actually practise, and how deep each can go. This is what the exercise engine reads; it never re-decides reach mid-lesson.",
+      "items": {
+        "type": "object",
+        "required": ["action", "reach"],
+        "additionalProperties": false,
+        "properties": {
+          "action": {"$shared": "cognitive_action"},
+          "reach": {"$shared": "reach_level"},
+          "depth_ceiling": {"type": "integer", "minimum": 1, "maximum": 5},
+          "via": {"type": "array", "items": {"type": "string"}, "description": "target_id values this action depends on."},
+          "fallback": {"type": "string", "description": "REQUIRED when reach is not direct. What the item becomes, written out in advance so it is never improvised during a lesson."}
+        }
+      }
+    },
+
+    "environment": {
+      "type": "object",
+      "description": "Machine facts, recorded only because some targets happen to be software. A course whose targets are texts and sources leaves this out entirely.",
+      "additionalProperties": false,
+      "properties": {
+        "platform": {"type": "string"},
+        "runtime": {"type": "string", "description": "e.g. the Python version the plugin itself is running on."},
+        "found": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "available"],
+            "additionalProperties": false,
+            "properties": {
+              "name": {"type": "string"},
+              "available": {"type": "boolean"},
+              "version": {"type": "string"},
+              "path": {"type": "string"},
+              "verified": {"type": "boolean"},
+              "note": {"type": "string"}
+            }
+          }
+        },
+        "hosts": {
+          "type": "array",
+          "description": "Present only when the learner has said they have a machine elsewhere and that it may be used. The plugin never assumes one exists.",
+          "items": {
+            "type": "object",
+            "required": ["host_id", "reachable"],
+            "additionalProperties": false,
+            "properties": {
+              "host_id": {"type": "string"},
+              "reachable": {"type": "boolean"},
+              "checked_at": {"type": "string", "format": "date-time"},
+              "workdir_writable": {"type": "boolean"},
+              "scheduler": {"type": "string"},
+              "note": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+
+    "recommendations": {
+      "type": "array",
+      "description": "Concrete things to obtain or arrange. Shown to the learner; never acted on automatically, and nothing is ever installed.",
+      "items": {
+        "type": "object",
+        "required": ["target_id", "action"],
+        "additionalProperties": false,
+        "properties": {
+          "target_id": {"type": "string"},
+          "action": {"type": "string"},
+          "detail": {"type": "string"},
+          "url": {"type": "string"}
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,276 @@
+{
+  "$id": "adapter",
+  "title": "Course adapter",
+  "description": "What one field needs that the core cannot know. The core describes what a learner's mind is doing; an adapter says what that looks like in this particular subject, what practice has to act on, and how an answer can be checked. Adapters are GENERATED when a course is set up, from the learner's goal and from what was found to be within reach, and they are stored with the learner's data rather than shipped with the plugin. That is the whole reason the plugin can be used for a subject nobody anticipated.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "adapter_id",
+    "field",
+    "generated_at",
+    "targets",
+    "activities"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "adapter_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "field": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The subject this adapter covers, in the learner's own words. Free text. There is no list of permitted fields anywhere in the plugin, and adding one would defeat the purpose of adapters existing."
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "generated_for": {
+      "type": "string",
+      "description": "course_id this was produced for. An adapter may be reused by a later course in the same field, but it was written against one goal and should be re-examined rather than assumed to fit."
+    },
+    "goal_quoted": {
+      "type": "string",
+      "description": "The course goal this adapter was written against, copied verbatim. Kept because whether a shortfall is fatal depends on whether the goal names the thing that is missing, and that judgement has to be re-checkable later."
+    },
+    "targets": {
+      "type": "array",
+      "minItems": 1,
+      "description": "The things practice has to act on, DERIVED FROM THE APPLICATION SCENARIO and confirmed with the learner. There is no standard answer for a subject. Two people studying the same field for different purposes practise on different things, and picking by convention gives both of them the wrong one. Propose these from the scenario, then ask.",
+      "items": {
+        "type": "object",
+        "required": [
+          "target_id",
+          "kind",
+          "why"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "target_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What sort of thing it is, in this field's own words: a primary text, a document collection, a solver, an instrument, a person to converse with. Free text, because any fixed list would be a list of the subjects somebody happened to think of."
+          },
+          "why": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Which practice stops working without it. Stated concretely enough that a learner can judge whether obtaining it is worth the trouble."
+          },
+          "named_in_goal": {
+            "type": "boolean",
+            "description": "True when the goal asks for competence with this specific thing rather than understanding of what it does. This single field decides whether a substitute is acceptable, so it is set by reading the goal, never by how hard the target is to obtain."
+          },
+          "how_to_check": {
+            "type": "object",
+            "description": "How to establish whether this is within reach. Omitted when only the learner can answer, for example whether they hold a particular edition of a text.",
+            "additionalProperties": false,
+            "properties": {
+              "ask_the_learner": {
+                "type": "string",
+                "description": "The question to put to them, if this can only be settled by asking."
+              },
+              "command": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Argument list to run. Run in a temporary directory, because programs write output where they are started."
+              },
+              "expect_in_output": {
+                "type": "string",
+                "description": "Text that must appear for this to count as the real thing. A name on the system proves nothing on its own: several well-known program names collide with unrelated software."
+              },
+              "timeout_seconds": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          },
+          "substitute": {
+            "type": "object",
+            "description": "What this becomes when it cannot be reached. Written now, while there is time to think, rather than invented during a lesson.",
+            "additionalProperties": false,
+            "properties": {
+              "level": {
+                "$shared": "reach_level"
+              },
+              "describe": {
+                "type": "string",
+                "description": "What the substitute is, concretely."
+              },
+              "what_is_lost": {
+                "type": "string",
+                "description": "Which decisions the learner no longer has to make. Required for honesty: a substitute that claims to lose nothing has not been examined."
+              },
+              "depth_ceiling": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5,
+                "description": "Deepest concept depth this substitute can honestly certify."
+              }
+            }
+          },
+          "from_scenario": {
+            "type": "string",
+            "description": "Which part of the application scenario makes this necessary. A target that cannot be traced back to the scenario was chosen by convention, which is the thing this field exists to catch."
+          },
+          "confirmed_by_learner": {
+            "type": "boolean",
+            "description": "Whether the learner agreed this is what they should be practising on. Proposing is this plugin's job; deciding is theirs."
+          }
+        }
+      }
+    },
+    "activities": {
+      "type": "array",
+      "minItems": 1,
+      "description": "What doing this subject looks like, each mapped onto one of the seven things the core understands. This mapping is the adapter's main job: it is what lets one vocabulary describe running a calculation and reading a poem closely.",
+      "items": {
+        "type": "object",
+        "required": [
+          "activity_id",
+          "label",
+          "action"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "activity_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What a practitioner of this field would call it."
+          },
+          "action": {
+            "$shared": "cognitive_action"
+          },
+          "acts_on": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "target_id values this activity needs."
+          },
+          "depth_range": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 5
+            },
+            "description": "Shallowest and deepest concept depth this activity can serve, as [low, high]."
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "checkers": {
+      "type": "array",
+      "description": "Programs that can judge an answer in this field. The core runs one and reads its result; it never knows what the program inspects. This is how a field-specific way of marking work exists without a field-specific name appearing in the core.",
+      "items": {
+        "type": "object",
+        "required": [
+          "checker_id",
+          "what_it_checks",
+          "command"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "checker_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "what_it_checks": {
+            "type": "string",
+            "minLength": 1
+          },
+          "command": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "pass_when": {
+            "type": "string",
+            "description": "How to read the result: an exit code of zero, or a named value in its output being within a stated range."
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "needs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "target_id values the checker itself requires in order to run."
+          }
+        }
+      }
+    },
+    "register_hint": {
+      "type": "object",
+      "description": "A starting suggestion for how to pitch explanations in this field, to be confirmed with the learner rather than applied silently. The learner's stored setting always wins: the point of storing it per field is that it reflects this person's standing, which an adapter cannot know.",
+      "additionalProperties": false,
+      "properties": {
+        "suggested": {
+          "enum": [
+            "terse_technical",
+            "technical_with_gloss",
+            "analogy_first"
+          ]
+        },
+        "why": {
+          "type": "string"
+        }
+      }
+    },
+    "anchor_sources": {
+      "type": "array",
+      "description": "Where problems of established difficulty come from in this field, so that the hardest tier is not difficulty the system invented and then declared hard. Every field has some form of this: published problem sets, the derivations in an original paper, a documented specification, a public assignment, a standard passage set.",
+      "items": {
+        "type": "object",
+        "required": [
+          "label"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "detail": {
+            "type": "string"
+          },
+          "reachable": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "generated_by": {
+      "type": "string",
+      "description": "Which model produced this, recorded so that a later reader can weigh it. An adapter is a claim about a field, and claims have authors."
+    },
+    "scenario_quoted": {
+      "type": "string",
+      "description": "The application scenario this adapter was written against, copied verbatim from the course. Targets are derived from it, so if the scenario turns out to be wrong the targets are wrong too, and someone reading this later needs to be able to see what they were derived from."
+    }
+  }
+}

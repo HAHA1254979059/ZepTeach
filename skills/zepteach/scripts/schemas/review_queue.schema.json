@@ -1,0 +1,33 @@
+{
+  "$id": "review_queue",
+  "title": "Review queue for one course",
+  "description": "Drives proactive review. Session open reports overdue items before any new material is taught.",
+  "type": "object",
+  "required": ["schema_version", "course_id", "items"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "course_id": {"type": "string", "minLength": 1},
+    "updated": {"type": "string", "format": "date-time"},
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["concept_id", "due", "kind"],
+        "additionalProperties": false,
+        "properties": {
+          "concept_id": {"type": "string", "minLength": 1},
+          "due": {"type": "string", "format": "date-time"},
+          "kind": {
+            "enum": ["delayed_retest", "transfer_test", "refresh", "repair"],
+            "description": "delayed_retest: advance to consolidating. transfer_test: advance to mastered. refresh: keep a mastered concept alive. repair: re-teach after a shaky."
+          },
+          "priority": {"type": "integer", "minimum": 0, "maximum": 100},
+          "attempts_since_fail": {"type": "integer", "minimum": 0},
+          "blocks": {"type": "array", "items": {"type": "string"}, "description": "Downstream concepts frozen until this clears."},
+          "reason": {"type": "string"}
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,188 @@
+{
+  "$id": "profile",
+  "title": "Learner profile",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "learner_id",
+    "registers",
+    "pacing"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "learner_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "display_name": {
+      "type": "string"
+    },
+    "created": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "background": {
+      "type": "array",
+      "description": "What the learner has previously encountered, per domain. Ask WHAT they have studied, never HOW WELL: self-rated knowledge gain correlates about zero with measured gain and self-reported level runs consistently high, while learners do reliably remember which courses, books and projects they went through. So level here is a hypothesis to be probed, never a reason to skip probing.",
+      "items": {
+        "type": "object",
+        "required": [
+          "domain",
+          "level"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "domain": {
+            "type": "string",
+            "minLength": 1
+          },
+          "level": {
+            "enum": [
+              "novice",
+              "working",
+              "proficient",
+              "expert"
+            ]
+          },
+          "basis": {
+            "enum": [
+              "self_declared",
+              "probe_verified",
+              "assessed"
+            ]
+          },
+          "evidence": {
+            "type": "string"
+          },
+          "updated": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "registers": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Language register PER DOMAIN. The same learner is terse-technical in one field and analogy-first in another; one global setting is the root cause of explanations that are either over-simplified or over-hard.",
+      "items": {
+        "type": "object",
+        "required": [
+          "domain",
+          "register"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "domain": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Use an asterisk as the domain name for the fallback register."
+          },
+          "register": {
+            "enum": [
+              "terse_technical",
+              "technical_with_gloss",
+              "analogy_first"
+            ],
+            "description": "terse_technical: jargon straight, no analogy. technical_with_gloss: jargon plus a one-line operational definition. analogy_first: intuition before formalism."
+          },
+          "max_analogies_per_concept": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "require_operational_definition": {
+            "type": "boolean"
+          },
+          "formalism_tolerance": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          }
+        }
+      }
+    },
+    "pacing": {
+      "type": "object",
+      "required": [
+        "weekly_minutes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "weekly_minutes": {
+          "type": "integer",
+          "minimum": 10
+        },
+        "preferred_session_minutes": {
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 480
+        },
+        "max_new_concepts_per_session": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "max_new_concepts_low_energy": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 6
+        }
+      }
+    },
+    "source_languages": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Languages the learner can read source material in. Distinct from teaching_language in config."
+    },
+    "constraints": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Standing learner constraints, for example no video material, or formulas must be LaTeX."
+    },
+    "purpose": {
+      "type": "object",
+      "description": "Why this person is learning. Asked at first setup because it is the one thing that cannot be measured later, and it sets how deep is deep enough.",
+      "additionalProperties": false,
+      "properties": {
+        "statement": {
+          "type": "string",
+          "minLength": 1,
+          "description": "In the learner's own words."
+        },
+        "motivation": {
+          "enum": [
+            "exam",
+            "research",
+            "work",
+            "curiosity",
+            "teaching",
+            "other"
+          ]
+        },
+        "updated": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "depth_expectation": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Default depth target for new courses: 1 can-use, 2 can-compute, 3 can-derive, 4 can-critique, 5 can-create. A standing answer to how far to push, so it is not renegotiated every lesson."
+    }
+  }
+}

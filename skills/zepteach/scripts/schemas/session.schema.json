@@ -1,0 +1,188 @@
+{
+  "$id": "session",
+  "title": "One learning session",
+  "description": "Holds the turn budget that stops a session from silently eating context, and the declared energy that sizes the workload.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "session_id",
+    "course_id",
+    "started",
+    "energy",
+    "turn_budget",
+    "checkpoint_at"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "session_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "course_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "started": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ended": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "energy": {
+      "enum": [
+        "low",
+        "normal",
+        "high"
+      ],
+      "description": "Declared by the learner at open. Sizes new-concept count, exercise load and banter."
+    },
+    "planned_minutes": {
+      "type": "integer",
+      "minimum": 5,
+      "maximum": 480
+    },
+    "actual_minutes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "turn_budget": {
+      "type": "integer",
+      "minimum": 6,
+      "maximum": 200
+    },
+    "checkpoint_at": {
+      "type": "number",
+      "minimum": 0.2,
+      "maximum": 0.95,
+      "description": "Fraction of budget at which a digest must be written and raw detail may be dropped."
+    },
+    "hard_stop_at": {
+      "type": "number",
+      "minimum": 0.5,
+      "maximum": 1.0
+    },
+    "turns_used": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "checkpoints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "at_turn",
+          "digest_path"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "at_turn": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "digest_path": {
+            "type": "string"
+          },
+          "written_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "review_items": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "new_concepts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "lesson_id": {
+          "type": "string"
+        },
+        "exercise_tiers": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "anchored",
+              "variant",
+              "modeling"
+            ]
+          }
+        },
+        "progress_drift_minutes": {
+          "type": "number",
+          "description": "Negative means behind the deadline pace. Reported at open, before any teaching."
+        }
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "concepts_taught": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "attempts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "notes_written": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sidequests": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "digest_path": {
+          "type": "string"
+        },
+        "ended_reason": {
+          "enum": [
+            "completed",
+            "budget_reached",
+            "fatigue",
+            "learner_stopped",
+            "blocked",
+            "crashed"
+          ]
+        },
+        "interleaved_drill_done": {
+          "type": "boolean",
+          "description": "Whether the mandatory mixed drill happened. Required once the course has two or more concepts at practiced or above."
+        },
+        "modes_used": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Teaching modes used, so the pattern is visible across sessions."
+        }
+      }
+    }
+  }
+}

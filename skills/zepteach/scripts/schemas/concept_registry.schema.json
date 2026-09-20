@@ -1,0 +1,39 @@
+{
+  "$id": "concept_registry",
+  "title": "Global concept registry",
+  "description": "Concepts are global, not per-course. A concept learned in one course is the same concept a later course depends on, so mastery, notes and review carry across, and the crossing is most valuable when the two courses are in different fields. The price is naming discipline: an id must be namespaced, and two entries whose names look alike are flagged for a human to confirm they really are different things.",
+  "type": "object",
+  "required": ["schema_version", "concepts"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "updated": {"type": "string", "format": "date-time"},
+    "concepts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["concept_id", "canonical_title", "domain"],
+        "additionalProperties": false,
+        "properties": {
+          "concept_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*([.][a-z0-9][a-z0-9_-]*)+$",
+            "description": "Namespaced: <field>.<concept>. The namespace is mandatory precisely because the same word means different things in different fields; without it, sharing concepts across courses silently merges things that are not the same."
+          },
+          "canonical_title": {"type": "string", "minLength": 1},
+          "domain": {"type": "string", "minLength": 1},
+          "aliases": {"type": "array", "items": {"type": "string"}, "description": "Other names the learner or the sources use for this, including other languages."},
+          "note_path": {"type": "string", "description": "The single canonical note for this concept. One concept, one note, however many courses touch it."},
+          "courses": {"type": "array", "items": {"type": "string"}, "description": "Courses whose curriculum includes this concept."},
+          "distinct_from": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Concept ids that share a name but are NOT the same thing. Recording this once silences the similar-name warning and leaves the decision on the record."
+          },
+          "created": {"type": "string", "format": "date-time"},
+          "updated": {"type": "string", "format": "date-time"}
+        }
+      }
+    }
+  }
+}
