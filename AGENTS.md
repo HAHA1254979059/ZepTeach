@@ -131,6 +131,19 @@ places where those conflict and how each is settled.
 Every doctrine file opens by naming which principle it implements. A file
 that cannot name one should not exist.
 
+## On Codex
+
+Codex loads skills from `~/.agents/skills` for personal use, or from
+`<repo>/.agents/skills` for one project. The layout here is already what it
+expects, so linking `skills/zepteach` into one of those is the whole install,
+and `$zepteach` invokes it.
+
+The nine files under `commands/` are plain Markdown instructions. Copy them
+into `~/.codex/prompts/` to get them as slash commands, or just read the one
+you need.
+
+Marking has to be kept separate by hand; see the subagent section above.
+
 ## Installing it for development
 
 For working on the plugin while using it, link rather than copy, so that a

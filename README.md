@@ -13,9 +13,6 @@ instructions a model can talk itself out of.
 The teacher is called Zep. Low distance, high standards, and those are not in
 tension because Zep does not set the standards.
 
-Works with Claude Code out of the box, and with any assistant that can read
-files and run Python. See [AGENTS.md](AGENTS.md).
-
 ## Why
 
 Using a chat assistant as a tutor fails in ways that are individually small
@@ -24,12 +21,9 @@ review. It tells you a wrong answer is nearly right. It explains beautifully
 and never finds out whether you can do anything. It covers material, and
 covering material is not learning it.
 
-Most of those are not teaching problems. They are the consequences of having
-no memory between sessions, no ability to run anything, and no way to judge
-work without also being the one who taught it.
-
-This fixes the second set with a local plugin, and the first set with
-[a stated design philosophy](PHILOSOPHY.md) rather than a list of patches.
+Most of those are not teaching problems. They follow from having no memory
+between sessions, no ability to run anything, and no way to judge work
+without also being the one who taught it.
 
 ## What is different
 
@@ -38,8 +32,8 @@ minutes after being taught is the moment recall is easiest and says least
 about next week. Advancing requires a retest after a delay, in a different
 form, plus a test in a setting the material was not learned in.
 
-**A pass has to quote the answer.** Marking runs in a separate process that
-never sees the teaching and does not know whose work it is. For every
+**A pass has to quote the answer.** Marking runs separately from teaching,
+without the transcript, and does not know whose work it is. For every
 criterion it marks as met, it quotes the words that met it, and those quotes
 are checked against the submitted answer. A criterion nothing can be quoted
 for was not met.
@@ -54,6 +48,11 @@ during practice and twice as well on a test the next day, because it is the
 only arrangement where you have to work out which method applies. Three ways
 a set can look mixed and not be are refused in code.
 
+**Explanations arrive in pieces you ask for**, not as a lecture in one
+message. The benefit is specific: it comes from you controlling when the next
+piece arrives, so each piece ends with a question rather than "shall I go
+on?".
+
 **Every number says where it came from.** Forty-seven tunable values, each
 marked as supported by evidence, borrowed from an established tool, an
 engineering decision, or a starting guess to be replaced by your own records.
@@ -63,42 +62,114 @@ this up" is an allowed answer; having no answer is not.
 **It knows no subject.** The core describes what a mind is doing — recall,
 derive, apply, construct, analyze, critique, explain back — and never what
 hands are doing. What running a calculation or reading a text closely looks
-like comes from an adapter generated when you set up a course, from your
-goal and what you actually have. There is no list of supported subjects
-anywhere, and a test fails if one appears.
+like comes from an adapter generated when you set up a course, from your goal
+and what you actually have. There is no list of supported subjects anywhere,
+and a test fails if one appears.
+
+## Requirements
+
+Python, and nothing else. No packages, no services, no account. The schema
+validator, the spaced-repetition scheduler and the Word-document writer are
+all written here against the standard library, so this behaves identically on
+any machine with Python and nothing installed.
+
+Developed and tested on 3.13, on Linux, macOS and Windows. Nothing newer than
+3.9 syntax is used, though 3.9 has not been run against directly.
 
 ## Install
 
-**Claude Code**
+Clone it once, then point your assistant at it. Linking rather than copying
+means an update is a `git pull` with nothing to reinstall.
 
+```bash
+git clone https://github.com/HAHA1254979059/ZepTeach
 ```
-git clone https://github.com/HAHA1254979059/ZepTeach ~/.claude/plugins/zepteach
+
+### Claude Code
+
+```bash
+ln -s "$PWD/ZepTeach/skills/zepteach"  ~/.claude/skills/zepteach
+ln -s "$PWD/ZepTeach/commands"         ~/.claude/commands/zepteach
+ln -s "$PWD/ZepTeach/agents"           ~/.claude/agents/zepteach
 ```
 
-Then `/zt-setup`.
+Windows, in a normal prompt with no administrator rights:
 
-**Anything else** — clone it anywhere and read [AGENTS.md](AGENTS.md).
+```bat
+mklink /J "%USERPROFILE%\.claude\skills\zepteach"   "C:\path\to\ZepTeach\skills\zepteach"
+mklink /J "%USERPROFILE%\.claude\commands\zepteach" "C:\path\to\ZepTeach\commands"
+mklink /J "%USERPROFILE%\.claude\agents\zepteach"   "C:\path\to\ZepTeach\agents"
+```
 
-No dependencies. The schema validator, the scheduler and the Word-document
-writer are all written here against the standard library, so the plugin
-behaves identically on any machine with Python and nothing else.
+Start a new session and run `/zepteach:zt-setup`. Commands are namespaced by
+the folder they are linked under, so all nine appear as `/zepteach:zt-<name>`.
 
-Developed and tested on Python 3.13. Nothing newer than 3.9 syntax is used,
-but 3.9 itself has not been run against, so treat that as the intended floor
-rather than a verified one.
+The three subagents give marking, background gaps and course design their own
+context. That isolation is the reason marking cannot go soft, so it is worth
+linking rather than skipping.
+
+### Codex
+
+Codex reads skills from `~/.agents/skills` for personal use, or from
+`<repo>/.agents/skills` for one project. The layout ZepTeach already has —
+`SKILL.md` beside `scripts/` and `references/` — is exactly what Codex
+expects, so the skill is the whole install.
+
+```bash
+mkdir -p ~/.agents/skills
+ln -s "$PWD/ZepTeach/skills/zepteach" ~/.agents/skills/zepteach
+```
+
+Windows:
+
+```bat
+mkdir "%USERPROFILE%\.agents\skills"
+mklink /J "%USERPROFILE%\.agents\skills\zepteach" "C:\path\to\ZepTeach\skills\zepteach"
+```
+
+Invoke it with `$zepteach`, or just say what you want to study and let Codex
+pick it up from the description.
+
+**Codex has no subagents, so marking has to be kept separate by hand.** That
+matters more than it sounds: a marker that watched the teaching is the single
+most reliable way for standards to slip. Run
+
+```bash
+python skills/zepteach/scripts/grade.py package \
+    --item item.json --rubric rubric.json --answer answer.txt
+```
+
+which prints exactly what a marker should receive, assembled from an allowed
+list rather than by stripping things out. Paste it into a **fresh
+conversation** together with `agents/zt-grader.md`, and bring the verdict
+back. The isolation is real either way: what makes it work is the marker not
+having the teaching, not the mechanism that delivers it.
+
+The nine files under `commands/` are plain Markdown instructions rather than
+platform syntax. Read whichever one you need, or copy them into
+`~/.codex/prompts/` to invoke them as `/zt-learn` and so on.
+
+### Anything else that reads files and runs a shell
+
+Read [AGENTS.md](AGENTS.md). It covers the routing entry point, where learner
+data goes, and how to keep marking isolated without subagents.
 
 ## Using it
 
+In this order. The first three are once per course; the rest are the ongoing
+loop.
+
 ```
-/zt-setup      first time: who is learning, in what language, notes where
-/zt-course     create a course from a goal
-/zt-probe      work out what this course can practise on
-/zt-learn      teach
-/zt-review     run what is due
-/zt-assess     stage assessment and an objective progress report
-/zt-notes      write or repair the canonical notes
-/zt-sidequest  fill a background gap without losing the lesson
-/zt-status     where things stand
+zt-setup      who is learning, in what language, notes where
+zt-course     create a course from a goal
+zt-probe      work out what this course can practise on
+
+zt-learn      teach
+zt-review     run what is due
+zt-notes      write or repair the canonical notes
+zt-assess     stage assessment and an objective progress report
+zt-sidequest  fill a background gap without losing the lesson
+zt-status     where things stand
 ```
 
 Two setup stages, deliberately. The first asks what cannot be measured later:
@@ -106,17 +177,22 @@ which language to teach in, why you are studying, how deep you want to go.
 The second runs only after a course exists, because what a course needs
 depends on what it is for.
 
-It asks what you have studied. It never asks how well you know it:
-self-rated level correlates near zero with measured level and runs
-consistently high, so that answer would look like information and be used as
-if it were.
+It asks what you have studied. It never asks how well you know it: self-rated
+level correlates near zero with measured level and runs consistently high, so
+that answer would look like information and be used as if it were.
 
 ## Your data
 
 Everything about a learner lives in `ZEPTEACH_ROOT`, outside this repository:
 profile, mastery states, every recorded attempt, the review queue, courses,
-notes. Notes are written twice — markdown for the plugin to read back, a Word
+notes. Notes are written twice — Markdown for the plugin to read back, a Word
 document for you.
+
+```bash
+export ZEPTEACH_ROOT=~/zepteach-data
+```
+
+Defaults to `E:\ZepTeach` on Windows and `~/ZepTeach` elsewhere.
 
 Nothing is sent anywhere. Nothing is installed. No directory you did not
 permit is touched, reads included.
@@ -128,22 +204,26 @@ permitted. Store a password, key or token. Record a pass that nothing
 supports, a depth nothing demonstrated, or a review that quietly moved
 because the queue looked long.
 
-## Design
+## Before you start
 
-[PHILOSOPHY.md](PHILOSOPHY.md) — eight principles about how people learn,
-eight about building something that survives a real user, and two places
-where those conflict with the ruling written out.
+No real learner has used this yet. Every quantity marked `calibrated` is a
+documented starting value waiting for actual records to replace it, and the
+session length in particular is a placeholder that says so.
 
-[PACKAGING.md](PACKAGING.md) — what ships and what must not. ZepTeach ships a
-method, never a syllabus.
+If a number feels wrong in use, that is not a bug report; it is what those
+markings are for. `python skills/zepteach/scripts/constants.py table` shows
+which numbers are guesses and which are not.
 
-Twenty doctrine files under `skills/zepteach/references/`. Each opens by
-naming the principle it implements; a file that cannot name one should not
-exist.
+## Tests
 
-792 tests. Many of them are worth reading on their own: each states, in its
-name and docstring, a specific way this could go wrong while still producing
-output that reads perfectly well.
+```bash
+python -m pytest skills/zepteach/tests -q
+```
+
+792 tests, run on Linux, macOS and Windows against Python 3.10 and 3.13. Many
+are worth reading on their own: each states, in its name and docstring, a
+specific way this could go wrong while still producing output that reads
+perfectly well.
 
 ## Licence
 
