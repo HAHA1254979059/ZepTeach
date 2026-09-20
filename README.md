@@ -52,7 +52,7 @@ during practice and twice as well on a test the next day, because it is the
 only arrangement where you have to work out which method applies. Three ways
 a set can look mixed and not be are refused in code.
 
-**Every number says where it came from.** Forty-one tunable values, each
+**Every number says where it came from.** Forty-seven tunable values, each
 marked as supported by evidence, borrowed from an established tool, an
 engineering decision, or a starting guess to be replaced by your own records.
 `python skills/zepteach/scripts/constants.py table` prints the lot. "I made
