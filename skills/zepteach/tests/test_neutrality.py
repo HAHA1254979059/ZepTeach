@@ -118,6 +118,48 @@ class TestNoDisciplineInTheCore:
                                 "analyze", "critique", "explain_back"}
 
 
+class TestNothingHasToBeInstalled:
+    """The plugin claims to run on any machine with Python and nothing else.
+
+    That claim is what lets someone clone this and start, and it is the kind
+    of claim that erodes one convenient import at a time. A validator, a
+    scheduler and a document writer were all written here rather than pulled
+    in, so the cost of this property has already been paid; letting it lapse
+    quietly would waste that.
+    """
+
+    STDLIB = {
+        "argparse", "json", "re", "sys", "os", "math", "zipfile",
+        "subprocess", "tempfile", "shutil", "posixpath", "shlex",
+        "unicodedata", "datetime", "pathlib", "collections", "xml",
+        "__future__", "typing", "io", "csv", "itertools", "textwrap",
+    }
+
+    def test_no_shipped_script_imports_anything_third_party(self):
+        import re as _re
+        bad = []
+        for path in sorted(SCRIPTS.glob("*.py")):
+            for i, line in enumerate(
+                    path.read_text(encoding="utf-8").splitlines(), 1):
+                m = _re.match(r"^(?:import|from)\s+([A-Za-z_]\w*)", line)
+                if not m:
+                    continue
+                mod = m.group(1)
+                if mod in self.STDLIB or (SCRIPTS / (mod + ".py")).exists():
+                    continue
+                bad.append(path.name + ":" + str(i) + " " + mod)
+        assert bad == [], (
+            "a shipped script imports something that is not in the standard "
+            "library and not part of this plugin: " + ", ".join(bad))
+
+    def test_the_readme_still_says_so(self):
+        """If the property is ever dropped deliberately, the claim has to go
+        with it. A README promising no dependencies while the code has them
+        is worse than either."""
+        s = (PLUGIN / "README.md").read_text(encoding="utf-8")
+        assert "No dependencies" in s
+
+
 class TestNoSyllabusShips:
     # JSON that is part of the plugin rather than part of anybody's
     # learning. Listed by name so that a new file has to be argued for
