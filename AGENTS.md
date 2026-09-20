@@ -130,3 +130,28 @@ places where those conflict and how each is settled.
 
 Every doctrine file opens by naming which principle it implements. A file
 that cannot name one should not exist.
+
+## Installing it for development
+
+For working on the plugin while using it, link rather than copy, so that a
+change to the repository is live immediately and there is no second copy to
+forget about.
+
+On Windows, a directory junction needs no administrator rights:
+
+```
+mklink /J "%USERPROFILE%\.claude\skills\zepteach" "<repo>\skills\zepteach"
+mklink /J "%USERPROFILE%\.claude\commands\zepteach" "<repo>\commands"
+mklink /J "%USERPROFILE%\.claude\agents\zepteach" "<repo>\agents"
+```
+
+On macOS or Linux, `ln -s` the same three.
+
+One consequence worth knowing: a link exposes the whole folder, including
+`tests/`, which `PACKAGING.md` says must never ship. That is acceptable for a
+development link and would not be for a distribution. The fixture courses
+inside are scaffolding, not material for anyone to learn from.
+
+The learner's data still goes wherever `ZEPTEACH_ROOT` points, or to
+`E:\ZepTeach` on Windows and `~/ZepTeach` elsewhere by default. It is never
+inside the repository.
