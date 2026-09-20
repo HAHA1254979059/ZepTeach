@@ -1,5 +1,7 @@
 # ZepTeach
 
+[![tests](https://github.com/HAHA1254979059/ZepTeach/actions/workflows/tests.yml/badge.svg)](https://github.com/HAHA1254979059/ZepTeach/actions/workflows/tests.yml)
+
 A tutor that cannot quietly lower its standards.
 
 ZepTeach turns an AI assistant into something that teaches over months rather
@@ -70,7 +72,7 @@ anywhere, and a test fails if one appears.
 **Claude Code**
 
 ```
-git clone https://github.com/<you>/ZepTeach ~/.claude/plugins/zepteach
+git clone https://github.com/HAHA1254979059/ZepTeach ~/.claude/plugins/zepteach
 ```
 
 Then `/zt-setup`.
@@ -139,7 +141,7 @@ Twenty doctrine files under `skills/zepteach/references/`. Each opens by
 naming the principle it implements; a file that cannot name one should not
 exist.
 
-790 tests. Many of them are worth reading on their own: each states, in its
+792 tests. Many of them are worth reading on their own: each states, in its
 name and docstring, a specific way this could go wrong while still producing
 output that reads perfectly well.
 
