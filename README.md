@@ -1,17 +1,14 @@
 # ZepTeach
 
-[![tests](https://github.com/HAHA1254979059/ZepTeach/actions/workflows/tests.yml/badge.svg)](https://github.com/HAHA1254979059/ZepTeach/actions/workflows/tests.yml)
+![ZepTeach](docs/cover.webp)
 
-A tutor that cannot quietly lower its standards.
+[![tests](https://github.com/HAHA1254979059/ZepTeach/actions/workflows/tests.yml/badge.svg)](https://github.com/HAHA1254979059/ZepTeach/actions/workflows/tests.yml)
 
 ZepTeach turns an AI assistant into something that teaches over months rather
 than answering over minutes. It keeps a durable record of what you have
 actually demonstrated, schedules retests from your own recall history, and
 puts the rules that matter into scripts that refuse rather than into
 instructions a model can talk itself out of.
-
-The teacher is called Zep. Low distance, high standards, and those are not in
-tension because Zep does not set the standards.
 
 ## Why
 
