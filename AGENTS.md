@@ -119,7 +119,7 @@ It prints nothing when there is nothing to say.
 python -m pytest skills/zepteach/tests -q
 ```
 
-851 tests, no dependencies beyond pytest itself. They are worth reading:
+853 tests, no dependencies beyond pytest itself. They are worth reading:
 most of them state, in the test name and docstring, a specific way this could
 go wrong while still producing output that reads perfectly well.
 

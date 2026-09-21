@@ -66,6 +66,19 @@ class TestAnOldRootIsRecognised:
         assert mg.main(["check", "--root", str(tmp_path)]) == zs.EXIT_OK
         assert "nothing to upgrade" in capsys.readouterr().out
 
+    def test_a_brand_new_learner_never_sees_an_upgrade_notice(self, tmp_path):
+        """Caught by running it rather than by reasoning about it: the first
+        thing a new learner saw was a paragraph about records written by an
+        earlier version, of which they had none. A step with nothing to
+        migrate and nothing to ask is already satisfied."""
+        assert mg.outstanding(tmp_path) == []
+        assert rt.next_step(tmp_path)["do"] == "setup1"
+
+    def test_a_set_up_learner_with_no_history_is_also_left_alone(self, root):
+        """The fixture root has config and a profile and no mastery rows.
+        Nothing has been taught, so nothing predates the rule."""
+        assert [w["id"] for w in mg.outstanding(root)] == [mg.NOTATION]
+
 
 class TestApplyingIt:
     def test_a_copy_is_taken_before_anything_is_touched(self, root):
@@ -113,7 +126,7 @@ class TestApplyingIt:
 
         mg.STEPS.append({"id": "invented-later", "title": "t",
                          "needed": lambda r: {"step": "invented-later",
-                                              "concepts": []},
+                                              "concepts": ["some.concept"]},
                          "apply": lambda r, w: {"did": "something"}})
         try:
             assert [w["id"] for w in mg.outstanding(root)] == \

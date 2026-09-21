@@ -139,6 +139,14 @@ def apply_teaching_evidence(root: Path, when: str) -> dict:
 NOTATION = "notation-channel"
 
 
+def is_new_root(root: Path) -> bool:
+    """Nothing has been written here yet, so there is nothing to bring
+    forward. A fresh root reporting an upgrade would put a paragraph about
+    records that do not exist in front of somebody who has not started."""
+    return (not (root / "config.json").exists()
+            and not (root / "learner" / "profile.json").exists())
+
+
 def notation_needed(root: Path) -> dict:
     """Whether the profile can answer a question items now ask of it.
 
@@ -148,7 +156,12 @@ def notation_needed(root: Path) -> dict:
     which is when it got asked last time.
     """
     p = root / "learner" / "profile.json"
-    profile = zs.read_json(p) if p.exists() else {}
+    if not p.exists():
+        # No profile means setup has not run. The question belongs to the
+        # interview, which will ask it in the right group; raising it here
+        # would be a migration reporting on records nobody has made.
+        return {"step": NOTATION, "concepts": [], "ask": None}
+    profile = zs.read_json(p)
     if profile.get("notation_input"):
         return {"step": NOTATION, "concepts": [], "ask": None}
     return {
@@ -204,14 +217,28 @@ def grandfathered(root: Path) -> set:
         return set()
 
 
+def has_work(found: dict) -> bool:
+    """Whether a step would actually do or say anything.
+
+    A step with nothing to migrate and nothing to ask is already satisfied,
+    and reporting it is how an upgrade notice appears in front of a learner
+    whose records are fine - or, worse, one who has no records at all.
+    """
+    return bool(found.get("concepts") or found.get("ask"))
+
+
 def outstanding(root: Path) -> list:
-    """Steps this root has not had, in order. Empty means up to date."""
+    """Steps with work left to do on this root. Empty means up to date."""
+    if is_new_root(root):
+        return []
     done = applied(root)
     out = []
     for step in STEPS:
         if step["id"] in done:
             continue
         found = step["needed"](root)
+        if not has_work(found):
+            continue
         out.append(dict(found, id=step["id"], title=step["title"]))
     return out
 
@@ -287,11 +314,12 @@ def cmd_apply(args) -> int:
 
     when = zs.now_iso()
     where = backup(root, when)
+    ids = set(w["id"] for w in work)
     print("copied the root to " + str(where) + " before touching anything")
 
     asks = []
     for step in STEPS:
-        if step["id"] in applied(root):
+        if step["id"] in applied(root) or step["id"] not in ids:
             continue
         result = step["apply"](root, when)
         zs.append_jsonl(root / LEDGER, {
