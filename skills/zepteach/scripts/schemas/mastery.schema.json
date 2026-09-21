@@ -173,6 +173,10 @@
           "graded_by": {
             "type": "string",
             "description": "script:<name>, agent:zt-grader, or manual."
+          },
+          "execution_only": {
+            "type": "boolean",
+            "description": "This answer showed the idea and slipped in carrying it out. Carried onto the evidence row because the state machine and the scheduler both read it: a slip does not move a concept backwards and does not shorten its next interval. Without it here, the distinction would exist in the verdict and be thrown away at the moment it matters."
           }
         }
       }

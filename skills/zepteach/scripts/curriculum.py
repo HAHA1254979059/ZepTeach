@@ -319,6 +319,224 @@ def cmd_validate(args) -> int:
     return zs.EXIT_VALIDATION if errs else zs.EXIT_OK
 
 
+def lesson_progress(root: Path, slug: str, curriculum: dict, lesson_id: str,
+                    rows: list) -> dict:
+    """What is still open in this lesson.
+
+    The reason this exists: nothing decided when a lesson was over. The
+    pointer was advisory, `curriculum.py next` printed a suggestion, and the
+    judgement of whether to move on belonged to whoever was teaching - who,
+    in the one real run, spent four hours on one lesson of a course with
+    five weeks to cover seventy-eight concepts. Going deeper always feels
+    like the responsible choice in the moment; that is exactly why it needs
+    something outside the moment.
+    """
+    import teaching as tp
+    les = None
+    for mod in curriculum.get("modules") or []:
+        for candidate in mod.get("lessons") or []:
+            if candidate.get("lesson_id") == lesson_id:
+                les = candidate
+    if les is None:
+        raise FileNotFoundError("no such lesson: " + lesson_id)
+
+    cdir = root / "courses" / slug
+    explained = set(e.get("concept_id")
+                    for e in zs.read_jsonl(cdir / "expositions.jsonl"))
+    deferred = dict((d["concept_id"], d)
+                    for d in zs.read_jsonl(cdir / "deferrals.jsonl"))
+    attempts = zs.read_jsonl(cdir / "attempts.jsonl")
+    said_back = set()
+    for a in attempts:
+        if a.get("form") == "explain_back":
+            said_back.update(a.get("concept_ids") or [])
+
+    wanted = [c.get("concept_id") for c in les.get("concepts") or []]
+    return {
+        "lesson_id": lesson_id,
+        "estimated_minutes": les.get("estimated_minutes"),
+        "concepts": wanted,
+        "not_explained": [c for c in wanted
+                          if c not in explained and c not in deferred],
+        "owes_explain_back": [c for c in wanted
+                              if c in explained and c not in said_back
+                              and c not in deferred],
+        "deferred": sorted(deferred),
+    }
+
+
+def cmd_advance(args) -> int:
+    """Move to the next lesson, or say what is stopping that.
+
+    The refusal is the point. Either the lesson was finished or somebody
+    decided out loud to leave part of it - both are fine, and drifting is
+    not, because drifting is what produces a course that is one third
+    covered and entirely out of time.
+    """
+    root = _root(args)
+    _cdir, course, curriculum, rows = _load(root, args.course)
+    st = lesson_progress(root, args.course, curriculum, args.lesson,
+                         rows)
+
+    blocked = []
+    if st["not_explained"]:
+        blocked.append("never explained: " + ", ".join(st["not_explained"]))
+    if st["owes_explain_back"]:
+        blocked.append("explained but never said back: " +
+                       ", ".join(st["owes_explain_back"]))
+
+    if blocked and not args.leaving_it:
+        print("GATE FAILED: lesson " + args.lesson + " is not finished.",
+              file=sys.stderr)
+        for b in blocked:
+            print("  " + b, file=sys.stderr)
+        print("  Finish it, or decide with the learner to leave part of it "
+              "and record that: curriculum.py defer --course " + args.course +
+              " --lesson " + args.lesson + " --concepts <a,b> --because "
+              "<their words>. Moving on without either is how a plan stops "
+              "describing the course.", file=sys.stderr)
+        return zs.EXIT_GATE
+
+    nxt = next_lesson(curriculum, ln.load_mastery(root))
+    print("lesson " + args.lesson + " closed" +
+          (" (leaving " + ", ".join(st["not_explained"] +
+                                    st["owes_explain_back"]) + ")"
+           if blocked else ""))
+    if nxt is None:
+        print("every lesson in this course is done")
+    else:
+        print("next: " + str(nxt.get("lesson_id")))
+    return zs.EXIT_OK
+
+
+def cmd_defer(args) -> int:
+    """Record that part of a lesson is being left, and why.
+
+    Written down rather than dropped, so that a progress report can tell the
+    difference between a course that covered less and a course that decided
+    to cover less.
+    """
+    root = _root(args)
+    cdir, _course, _curriculum, _rows = _load(root, args.course)
+    when = zs.now_iso()
+    for cid in args.concepts.split(","):
+        zs.append_jsonl(cdir / "deferrals.jsonl", {
+            "schema_version": 1,
+            "concept_id": cid.strip(),
+            "lesson_id": args.lesson,
+            "deferred_at": when,
+            "because": args.because,
+        })
+        print("deferred " + cid.strip())
+    print("because: " + args.because)
+    return zs.EXIT_OK
+
+
+def pace_check(st: dict, minutes_spent: int) -> dict:
+    """Whether this lesson is running long, and by how much.
+
+    Reports; refuses nothing. A lesson can be worth twice its estimate. What
+    is not worth anything is nobody noticing.
+    """
+    est = st.get("estimated_minutes")
+    if not est or not minutes_spent:
+        return {"known": False}
+    ratio = minutes_spent / float(est)
+    return {
+        "known": True,
+        "estimated_minutes": est,
+        "spent_minutes": minutes_spent,
+        "ratio": round(ratio, 2),
+        "over": ratio >= K.LESSON_OVERRUN_RATIO,
+        "say": ("这节课已经花了 " + str(minutes_spent) + " 分钟，计划是 " +
+                str(est) + " 分钟。是继续深挖还是先往前走，你决定。"
+                if ratio >= K.LESSON_OVERRUN_RATIO else ""),
+    }
+
+
+def plan_diff(old_cur: dict, new_cur: dict, rows: list) -> dict:
+    """What this replan actually does to the course.
+
+    Written out rather than applied quietly, because the expensive case is
+    invisible: dropping concepts that were already taught. Those have review
+    debt against them, they are prerequisites for things still in the plan,
+    and a schedule that no longer mentions them keeps scheduling them. A plan
+    can absolutely be cut - most plans should be - but cutting it is a
+    decision somebody makes, not a side effect of writing a new file.
+    """
+    def ids(cur):
+        out = []
+        for mod in cur.get("modules") or []:
+            for les in mod.get("lessons") or []:
+                for c in les.get("concepts") or []:
+                    out.append(c.get("concept_id"))
+        return out
+
+    before, after = set(ids(old_cur)), set(ids(new_cur))
+    by_id = dict((r.get("concept_id"), r) for r in rows)
+    dropped = sorted(before - after)
+    return {
+        "added": sorted(after - before),
+        "dropped": dropped,
+        "dropped_but_already_taught": sorted(
+            c for c in dropped
+            if (by_id.get(c) or {}).get("state", "unseen") != "unseen"),
+        "kept": len(before & after),
+    }
+
+
+def cmd_replan(args) -> int:
+    """Change the course, on the record.
+
+    Every plan change is recorded with the learner's own reason. Without
+    that, a progress report months later compares work done under one plan
+    with a plan that has since been rewritten, and reports whichever story
+    the current file happens to tell.
+    """
+    root = _root(args)
+    cdir, course, old_cur, rows = _load(root, args.course)
+    new_cur = json.loads(Path(args.file).read_text(encoding="utf-8")
+                         if args.file else args.data)
+
+    errors = zs.validate_doc(new_cur, "curriculum")
+    if errors:
+        for e in errors:
+            print("invalid curriculum: " + str(e), file=sys.stderr)
+        return zs.EXIT_VALIDATION
+
+    diff = plan_diff(old_cur, new_cur, rows)
+    if diff["dropped_but_already_taught"] and not args.drop_taught:
+        print("GATE FAILED: this plan drops concepts that were already "
+              "taught: " + ", ".join(diff["dropped_but_already_taught"]) +
+              ". They still carry review debt and may be prerequisites for "
+              "what is left. Say so to the learner and pass --drop-taught "
+              "if that is what they want.", file=sys.stderr)
+        return zs.EXIT_GATE
+
+    when = zs.now_iso()
+    new_cur["version"] = int(old_cur.get("version") or 1) + 1
+    new_cur["updated"] = when
+    zs.atomic_write_json(cdir / "curriculum.json", new_cur)
+    zs.append_jsonl(cdir / "plan_changes.jsonl", {
+        "schema_version": 1,
+        "changed_at": when,
+        "version": new_cur["version"],
+        "because": args.because,
+        "diff": diff,
+    })
+
+    print("plan updated to version " + str(new_cur["version"]))
+    print("  because: " + args.because)
+    print("  added " + str(len(diff["added"])) + ", dropped " +
+          str(len(diff["dropped"])) + ", kept " + str(diff["kept"]))
+    if diff["dropped_but_already_taught"]:
+        print("  dropped after being taught: " +
+              ", ".join(diff["dropped_but_already_taught"]))
+        print("  their reviews still come due. Retire them deliberately or "
+              "leave them in the queue, but do not let the queue decide")
+    return zs.EXIT_OK
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="curriculum.py",
@@ -336,6 +554,30 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--course", required=True)
     sp.add_argument("--lesson", required=True)
     sp.set_defaults(func=cmd_lesson)
+
+    sp = sub.add_parser("advance", help="close this lesson and move on")
+    sp.add_argument("--course", required=True)
+    sp.add_argument("--lesson", required=True)
+    sp.add_argument("--leaving-it", action="store_true",
+                    help="they agreed to leave part of it unfinished")
+    sp.set_defaults(func=cmd_advance)
+
+    sp = sub.add_parser("defer", help="leave part of a lesson, on the record")
+    sp.add_argument("--course", required=True)
+    sp.add_argument("--lesson", required=True)
+    sp.add_argument("--concepts", required=True)
+    sp.add_argument("--because", required=True)
+    sp.set_defaults(func=cmd_defer)
+
+    sp = sub.add_parser("replan", help="change the course, on the record")
+    sp.add_argument("--course", required=True)
+    sp.add_argument("--because", required=True,
+                    help="the learner's reason, in their words")
+    sp.add_argument("--file")
+    sp.add_argument("--data")
+    sp.add_argument("--drop-taught", action="store_true",
+                    help="they agreed to drop concepts already taught")
+    sp.set_defaults(func=cmd_replan)
 
     sp = sub.add_parser("drift")
     sp.add_argument("--course", required=True)

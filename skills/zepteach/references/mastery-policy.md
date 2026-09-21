@@ -155,3 +155,15 @@ passed on its computational criteria proved the computational level.
 Going past the target on the main line is refused. Going deeper is a side
 branch or an explicit raise, both recorded. Depth that creeps upward is how a
 course quietly becomes twice as long as agreed.
+
+## A slip does not move a concept backwards
+
+An attempt recorded with `execution_only: true` - every criterion about the
+idea met, only execution ones unmet - leaves the state where it is. It does
+not demote to `shaky`, and it does not shorten the next interval.
+
+It does not promote either. What a promotion needs is a clean answer after a
+delay, and this was not a clean answer.
+
+`assessment-rubrics.md` has how the distinction is made and what stops it
+becoming a way of being kind.

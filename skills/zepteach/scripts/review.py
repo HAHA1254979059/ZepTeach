@@ -45,7 +45,18 @@ from constants import (  # noqa: E402
 )
 
 
-def grade_of(verdict: str, latency: str = None) -> int:
+def grade_of(verdict: str, latency: str = None,
+             execution_only: bool = False) -> int:
+    """How well this went, as the scheduler's input.
+
+    An execution-only miss is graded as the answer it was about the idea,
+    not as the arithmetic. Grading it zero would shorten the next interval
+    on a concept the learner just demonstrated, which is the scheduling half
+    of reading a slip as a gap: not only a retest they did not need, but a
+    retest sooner than one they did.
+    """
+    if execution_only and verdict in ("fail", "partial"):
+        return GRADE_TABLE.get(("partial", latency or DEFAULT_LATENCY), 0)
     if verdict == "fail":
         return 0
     return GRADE_TABLE.get((verdict, latency or DEFAULT_LATENCY), 0)
@@ -175,7 +186,8 @@ def _gap_ok(kind: str, first_taught, when, min_days: dict) -> bool:
 
 
 def next_state(current: str, kind: str, verdict: str, first_taught, when,
-               min_days: dict, latency: str = None):
+               min_days: dict, latency: str = None,
+               execution_only: bool = False):
     """Return (new_state, reason). Promotion is never granted for effort or
     enthusiasm; it is granted for a specific kind of evidence arriving after
     a specific gap, recalled cleanly.
@@ -187,6 +199,16 @@ def next_state(current: str, kind: str, verdict: str, first_taught, when,
 
     if kind == "probe":
         return current, "a prerequisite probe does not move the state"
+
+    # A slip is not a gap. When the rubric says every criterion about the
+    # idea was met and only the execution ones failed, the answer is
+    # evidence FOR the concept, and moving the concept backwards on it is
+    # the system mistaking arithmetic for understanding. It does not promote
+    # either: what a promotion needs is a clean answer, and this was not one.
+    if execution_only and verdict in ("fail", "partial"):
+        return current, ("the idea held and the execution slipped, so this "
+                         "is not evidence against the concept. Have them "
+                         "redo that step rather than retesting the idea")
 
     if verdict == "fail":
         if current in ("practiced", "consolidating", "mastered"):
@@ -249,7 +271,8 @@ def apply_evidence(mastery: dict, evidence: dict, min_days: dict,
     old = m.get("state", "unseen")
     new, reason = next_state(old, evidence.get("kind"),
                              evidence.get("verdict"), first, when, min_days,
-                             evidence.get("latency_rating"))
+                             evidence.get("latency_rating"),
+                             bool(evidence.get("execution_only")))
     if new != old and not zs.can_transition(old, new):
         new, reason = old, ("refused an illegal transition " + old +
                             " -> " + new)
@@ -257,7 +280,8 @@ def apply_evidence(mastery: dict, evidence: dict, min_days: dict,
     m["_transition_reason"] = reason
 
     grade = grade_of(evidence.get("verdict"),
-                     evidence.get("latency_rating"))
+                     evidence.get("latency_rating"),
+                     bool(evidence.get("execution_only")))
     prev = m.get("scheduling") or {}
     prev_due = zs._parse_dt(prev.get("next_due"))
     days_late = max((when - prev_due).total_seconds() / 86400.0, 0.0) \

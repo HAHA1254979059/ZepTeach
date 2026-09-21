@@ -183,6 +183,44 @@
           "description": "Teaching modes used, so the pattern is visible across sessions."
         }
       }
+    },
+    "away": {
+      "type": "array",
+      "description": "Spans during this session when the learner was not there. Elapsed wall-clock time was standing in for two different quantities: how long they studied, and how long a memory has had to decay. It is only ever valid for the second. One learner had to tell the system twice in a single session that the elapsed time meant nothing because they had walked away for an hour, which is a thing the system should have asked rather than been told.",
+      "items": {
+        "type": "object",
+        "required": [
+          "minutes"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "minutes": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "noticed": {
+            "enum": [
+              "learner_said",
+              "gap_between_turns"
+            ],
+            "description": "gap_between_turns means the system saw a long silence and asked. learner_said means they volunteered it, which is what they had to do before this existed."
+          }
+        }
+      }
+    },
+    "elapsed_minutes": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Wall-clock from open to close, including time away. Kept separately from actual_minutes because review intervals are measured against real elapsed time and study progress is not."
+    },
+    "last_turn_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the previous turn was recorded, so that a long silence can be noticed and asked about rather than silently counted as study."
     }
   }
 }

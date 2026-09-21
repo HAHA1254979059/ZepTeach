@@ -51,8 +51,17 @@ def frontmatter(p):
 
 
 class TestCommands:
-    def test_there_are_commands(self):
-        assert len(commands()) >= 8
+    def test_there_is_exactly_one_way_in(self):
+        """There were nine. Nine commands means the learner has to know
+        which of nine applies before they can say what they want, which is a
+        menu standing in for a conversation - and in practice they used one
+        and ignored the rest.
+
+        One entry point also removes a whole class of defect: with nine
+        files, an improvement to the way in gets written into whichever one
+        was open, and the other eight keep the old behaviour.
+        """
+        assert [p.name for p in commands()] == ["zt.md"]
 
     @pytest.mark.parametrize("path", commands(), ids=lambda p: p.name)
     def test_each_has_a_description(self, path):
@@ -87,12 +96,34 @@ class TestCommands:
             assert sub in listed, (
                 path.name + ": " + script + " has no " + sub)
 
-    def test_the_commands_cover_the_routed_intents(self):
-        """Every intent worth a route is reachable by the learner. An intent
-        with a route and no way to ask for it is doctrine nobody loads."""
-        joined = " ".join(text(p) for p in commands())
-        for intent in ("lesson", "review", "notes", "sidequest"):
-            assert intent in joined or intent.rstrip("s") in joined, intent
+    def test_the_one_command_routes_rather_than_listing(self):
+        """It must hand the decision to the router, not re-describe the
+        intents. A command file that lists them is the menu again, one file
+        further down, and it goes stale the first time an intent changes."""
+        s = text(commands()[0])
+        assert "route.py next" in s
+        assert "--said" in s
+
+    def test_changing_the_plan_goes_through_the_same_door(self):
+        """Mid-course, a learner says "this is too slow" or "I need X before
+        my internship". Those are the requests most likely to be answered
+        with a lecture instead of a change, because they do not look like
+        commands."""
+        s = text(commands()[0])
+        assert "replan" in s
+        assert "too slow" in s
+
+    def test_every_routed_intent_is_reachable_from_the_router(self):
+        """The coverage check that used to be done against the command files.
+        Moved here because the guarantee was never that a command file
+        mentions an intent - it was that a learner can get to it."""
+        step_names = set(rt.ROUTES)
+        reachable = {"setup1", "course-new", "setup2", "lesson", "upgrade"}
+        for alt in rt.alternatives({}, [{"slug": "a"}, {"slug": "b"}]):
+            reachable.add(alt["intent"])
+        for intent in ("replan", "sidequest", "notes", "status", "assess"):
+            assert intent in reachable, intent
+            assert intent in step_names, intent
 
 
 class TestSubagents:

@@ -59,31 +59,28 @@ QUESTIONS = [
         "why": "It cannot be inferred and must never be chosen for them. A "
                "default here silently decides how every explanation reads.",
         "stores": "config.teaching_language",
+        "group": "start",
+        "blocks": "anything at all: it decides the first sentence",
         "required": True,
-    },
-    {
-        "id": "address",
-        "ask": "What should Zep call you, and how informal should it be? "
-               "(1 is a formal colleague, 5 is someone you share a desk "
-               "with.)",
-        "why": "Tone is the one thing a learner notices immediately and the "
-               "one thing that drifts without somewhere to store it.",
-        "stores": "config.persona",
-        "required": True,
-        "note": "This changes tone only. It never changes what counts as a "
-                "correct answer, and saying so out loud at this point is "
-                "worth the sentence.",
     },
     {
         "id": "notes",
-        "ask": "Where should the notes go? Notes get written twice - plain "
-               "text for me to read back later, and a readable document for "
-               "you. Same folder is fine, or two.",
+        "ask": "Your notes are going in the notes folder under your data "
+               "root - one plain-text copy I read back later, one document "
+               "copy for you. Say the word if you want them somewhere you "
+               "already open instead.",
         "why": "Notes are the durable half of this, and the two readers "
                "genuinely want different things. Writing them somewhere the "
-               "learner does not already open wastes them.",
+               "learner does not already open wastes them - which is why "
+               "this is said out loud rather than defaulted in silence. It "
+               "is not a blocking question: a default that is stated can be "
+               "corrected in one sentence, and a course does not have to "
+               "wait for it.",
         "stores": "config.notes",
-        "required": True,
+        "group": "notes",
+        "blocks": "nothing, but say where they are going the first time "
+                  "notes are written",
+        "required": False,
     },
     {
         "id": "purpose",
@@ -94,6 +91,8 @@ QUESTIONS = [
                "It also settles how deep is deep enough, which otherwise "
                "gets renegotiated in every lesson.",
         "stores": "profile.purpose",
+        "group": "course",
+        "blocks": "creating a course",
         "required": True,
     },
     {
@@ -105,6 +104,8 @@ QUESTIONS = [
                "build. Without one stated, lessons drift deeper than "
                "intended because going deeper always feels productive.",
         "stores": "profile.depth_expectation",
+        "group": "course",
+        "blocks": "creating a course",
         "required": True,
     },
     {
@@ -114,6 +115,8 @@ QUESTIONS = [
         "why": "Learners remember what they studied accurately. This gives "
                "the starting point for probing.",
         "stores": "profile.background",
+        "group": "course",
+        "blocks": "creating a course",
         "required": False,
         "never": "Do not ask how well they know it, or to rate themselves "
                  "out of five. Self-rated level correlates at about zero "
@@ -129,6 +132,8 @@ QUESTIONS = [
                "way to say whether a course is on schedule, and no honest "
                "way to plan one.",
         "stores": "profile.pacing",
+        "group": "course",
+        "blocks": "creating a course",
         "required": True,
         "note": "A starting figure is enough. The session log replaces it "
                 "with what they actually complete.",
@@ -139,6 +144,8 @@ QUESTIONS = [
         "why": "Different from the teaching language, and it decides which "
                "material can be used at all.",
         "stores": "profile.source_languages",
+        "group": "never",
+        "blocks": "nothing",
         "required": False,
     },
     {
@@ -160,6 +167,8 @@ QUESTIONS = [
                "answering. A question that is easier to submit is not an "
                "easier question.",
         "stores": "profile.notation_input",
+        "group": "item",
+        "blocks": "issuing an item whose answer needs notation",
         "required": False,
     },
     {
@@ -172,6 +181,8 @@ QUESTIONS = [
                "honoured rather than remembered, it needs a field of its "
                "own, the way the notation channel does.",
         "stores": "profile.constraints",
+        "group": "never",
+        "blocks": "nothing",
         "required": False,
     },
 ]
@@ -241,10 +252,55 @@ def known(root: Path) -> dict:
     return out
 
 
+# When each group has to be answered by. Asking everything at once was the
+# first thing the first real learner complained about, and the complaint was
+# precise: too much in one message, and it should be split into groups asked
+# when each group matters.
+#
+# It is worse than tiring. Two of the questions asked up front were ones the
+# learner had no way to answer yet - what to include in a course about a
+# field they had not started - and being asked them produced an answer that
+# looked like a decision and was a guess.
+GROUPS = {
+    "start": "before the first word: it decides what language everything is "
+             "in",
+    "course": "before designing a course, because they set what it is for "
+              "and how far it goes",
+    "notes": "before the first notes are written, which is the end of a "
+             "session rather than the start",
+    "item": "before setting an item whose answer needs notation",
+    "never": "not proactively. Recorded if the learner brings it up",
+}
+
+
 def remaining(root: Path) -> list:
     """The questions still worth asking, in order."""
     have = known(root)["answered"]
     return [q for q in QUESTIONS if q["id"] not in have]
+
+
+def blocking(root: Path, action: str) -> list:
+    """Only the questions standing between here and `action`.
+
+    This is the whole of the fix for a nine-question opening interview. The
+    interview was not too long because the questions were bad; it was too
+    long because it was all asked at the same moment, most of it about
+    decisions that had not come up yet.
+    """
+    if action not in GROUPS:
+        raise KeyError("no such group: " + action + " (have: " +
+                       ", ".join(GROUPS) + ")")
+    return [q for q in remaining(root) if q.get("group") == action]
+
+
+def still_needed(root: Path) -> dict:
+    """Every group, and what is still outstanding in it."""
+    have = known(root)["answered"]
+    out = {}
+    for name in GROUPS:
+        out[name] = [q["id"] for q in QUESTIONS
+                     if q.get("group") == name and q["id"] not in have]
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -288,8 +344,14 @@ def build(answers: dict, learner_id: str = "learner") -> tuple:
     }
     if answers.get("teaching_language"):
         config["teaching_language"] = answers["teaching_language"]
-    if answers.get("notes"):
-        config["notes"] = answers["notes"]
+    # Notes default to a folder inside the data root, and the learner is
+    # told where rather than asked where. The question used to be required
+    # before anything could start, which put a decision about the end of a
+    # session in front of the first word of the first lesson. Proposing a
+    # place and offering to move it costs one sentence and no waiting; the
+    # doctrine that notes must not land somewhere nobody opens is satisfied
+    # by saying where they landed, not by demanding a path up front.
+    config["notes"] = answers.get("notes") or {"markdown_dir": "notes"}
 
     profile = {
         "schema_version": 1,
@@ -393,6 +455,51 @@ def cmd_questions(args) -> int:
     return zs.EXIT_OK
 
 
+def cmd_next(args) -> int:
+    """Only the questions standing between here and the next thing.
+
+    The opening interview used to put all nine in one message. The first
+    real learner said so immediately: too much at once, split it into groups
+    and ask each group when it matters. Two of the nine were also questions
+    they had no way to answer yet, and asking anyway produced a guess that
+    then looked like a decision.
+
+    Asked this way, the interview before the first lesson is one question.
+    """
+    root = Path(args.root) if args.root else zs.default_root()
+    try:
+        qs = blocking(root, args.group)
+    except KeyError as exc:
+        print(str(exc), file=sys.stderr)
+        return zs.EXIT_NOT_FOUND
+
+    if args.json:
+        print(json.dumps({"group": args.group, "when": GROUPS[args.group],
+                          "questions": qs}, ensure_ascii=False, indent=2))
+        return zs.EXIT_OK
+
+    if not qs:
+        print("nothing blocking " + args.group)
+        return zs.EXIT_OK
+
+    print("ASK NOW (" + args.group + " - " + GROUPS[args.group] + ")")
+    print(render_questions(qs))
+    print()
+    print("Propose an answer to each of these before asking it, whenever "
+          "anything already said supports one, and ask them to correct it "
+          "rather than supply it. A learner who has just described what they "
+          "do for a living has already answered why they are studying; "
+          "asking it back reads as not having listened. An open question is "
+          "for what genuinely cannot be inferred.")
+    left = {k: v for k, v in still_needed(root).items()
+            if v and k not in (args.group, "never")}
+    if left:
+        print()
+        print("NOT NOW: " + "; ".join(
+            k + " (" + ", ".join(v) + ")" for k, v in left.items()))
+    return zs.EXIT_OK
+
+
 def cmd_write(args) -> int:
     root = Path(args.root) if args.root else zs.default_root()
     answers = json.loads(Path(args.file).read_text(encoding="utf-8")
@@ -445,6 +552,18 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--all", action="store_true")
     sp.add_argument("--json", action="store_true")
     sp.set_defaults(func=cmd_questions)
+
+    sp = sub.add_parser("next", help="only what blocks the next thing")
+    sp.add_argument("--group", required=True,
+                    choices=sorted(GROUPS),
+                    help="start, course, notes, item")
+    sp.add_argument("--json", action="store_true")
+    sp.set_defaults(func=cmd_next)
+
+    sp = sub.add_parser("groups", help="the groups and when each is due")
+    sp.set_defaults(func=lambda a: ([print(k.ljust(8) + v)
+                                     for k, v in GROUPS.items()],
+                                    zs.EXIT_OK)[1])
 
     sp = sub.add_parser("write", help="store the answers")
     sp.add_argument("--data", help="JSON object of answers")

@@ -115,3 +115,37 @@ concrete to compare against.
 
 `common_miss` is the most useful line in most rubrics. It names the near-miss
 that reads as correct, which is the case where marking actually goes wrong.
+
+## Say what failing each criterion means
+
+Every criterion carries a `kind`: `concept` or `execution`.
+
+- `concept` - failing it means they do not have the idea. A wrong method, a
+  missing condition, the wrong object.
+- `execution` - failing it means they have the idea and mis-carried it. An
+  arithmetic error, a dropped sign, a number copied wrong.
+
+Absent, it reads as `concept`, so every rubric written before this behaves
+as it did.
+
+The distinction has to be in the rubric, written before the answer arrives,
+because a wrong number looks identical either way once it is on the page.
+
+`grade.py check` reports `EXECUTION ONLY` when every concept criterion was
+met and the only unmet ones were execution. Record the attempt with
+`execution_only: true`. What follows from it:
+
+- **Have them redo that step.** Not a new item on the concept. The answer
+  already showed the concept; another item tests what was just demonstrated.
+- The state does not move backwards, and the next review interval does not
+  shorten. Both of those used to happen.
+- It does not promote either. A slip is not a clean answer.
+
+This exists because of a specific failure. A learner was retested three
+times running on one concept, each retest set off by a different arithmetic
+slip, and finally wrote: those were calculation mistakes, I am clear on the
+concepts. They were right, and nothing in the system could tell.
+
+**The obvious abuse is marking everything `execution` to be kind.** The test
+is whether a learner could fix it by redoing a step without being told
+anything. If they need to be told something, it is a concept criterion.

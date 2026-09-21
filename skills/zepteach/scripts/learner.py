@@ -563,6 +563,8 @@ def cmd_record(args) -> int:
             ev["latency_source"] = att.get("latency_source", "inferred")
         if att.get("graded_by"):
             ev["graded_by"] = att["graded_by"]
+        if att.get("execution_only"):
+            ev["execution_only"] = True
         before = row.get("state")
         updated = rv.apply_evidence(row, ev, min_days)
 

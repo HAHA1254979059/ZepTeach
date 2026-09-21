@@ -579,6 +579,33 @@ TUNABLE = {
         "source": "none",
         "why": "Below four answers, halves of two cannot say anything.",
     },
+    "idle_gap_minutes": {
+        "value": 20,
+        "kind": "engineering",
+        "source": "no study supports a number here; chosen against the "
+                  "longest thing a single turn legitimately takes",
+        "why": "A gap longer than this between turns is more likely someone "
+               "having walked away than someone thinking. It is not used to "
+               "decide anything - it decides when to ASK. The failure it "
+               "addresses is real: a learner left for over an hour twice in "
+               "one session and had to tell the system both times that the "
+               "elapsed time meant nothing, because wall-clock time was "
+               "being counted as study time. Set longer than the expected "
+               "minutes of any single item so that working slowly is never "
+               "mistaken for absence.",
+    },
+    "lesson_overrun_ratio": {
+        "value": 2.0,
+        "kind": "engineering",
+        "source": "none; a starting value to be replaced by this learner's "
+                  "own logs, like the other pacing numbers",
+        "why": "A lesson taking twice its estimate is worth saying out loud. "
+               "Not a stop: a lesson can be worth twice its estimate. What "
+               "is not worth it is nobody noticing, which is what happened "
+               "when one lesson ran four hours with nothing tracking it "
+               "against the plan, on a course with five weeks to cover "
+               "seventy-eight concepts.",
+    },
 }
 
 
@@ -660,6 +687,8 @@ SKILL_FILE_MAX_LINES = value("skill_file_max_lines")
 DRIFT_BEHIND_RATIO = value("drift_behind_ratio")
 DRIFT_AHEAD_RATIO = value("drift_ahead_ratio")
 PROBE_QUESTIONS = tuple(value("probe_questions"))
+IDLE_GAP_MINUTES = value("idle_gap_minutes")
+LESSON_OVERRUN_RATIO = value("lesson_overrun_ratio")
 
 
 # ---- cli -----------------------------------------------------------------

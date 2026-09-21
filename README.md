@@ -98,8 +98,8 @@ mklink /J "%USERPROFILE%\.claude\commands\zepteach" "C:\path\to\ZepTeach\command
 mklink /J "%USERPROFILE%\.claude\agents\zepteach"   "C:\path\to\ZepTeach\agents"
 ```
 
-Start a new session and run `/zepteach:zt-setup`. Commands are namespaced by
-the folder they are linked under, so all nine appear as `/zepteach:zt-<name>`.
+Start a new session and run `/zepteach:zt`. That is the only command; it is
+namespaced by the folder it is linked under.
 
 The three subagents give marking, background gaps and course design their own
 context. That isolation is the reason marking cannot go soft, so it is worth
@@ -142,9 +142,9 @@ conversation** together with `agents/zt-grader.md`, and bring the verdict
 back. The isolation is real either way: what makes it work is the marker not
 having the teaching, not the mechanism that delivers it.
 
-The nine files under `commands/` are plain Markdown instructions rather than
-platform syntax. Read whichever one you need, or copy them into
-`~/.codex/prompts/` to invoke them as `/zt-learn` and so on.
+Everything the entry point needs lives inside the skill, which is what Codex
+loads. Nothing here depends on the `commands/`, `agents/` or `hooks/`
+directories, and a test fails if that stops being true.
 
 ### Anything else that reads files and runs a shell
 
@@ -153,26 +153,32 @@ data goes, and how to keep marking isolated without subagents.
 
 ## Using it
 
-In this order. The first three are once per course; the rest are the ongoing
-loop.
-
 ```
-zt-setup      who is learning, in what language, notes where
-zt-course     create a course from a goal
-zt-probe      work out what this course can practise on
-
-zt-learn      teach
-zt-review     run what is due
-zt-notes      write or repair the canonical notes
-zt-assess     stage assessment and an objective progress report
-zt-sidequest  fill a background gap without losing the lesson
-zt-status     where things stand
+/zt                     carry on
+/zt quantum chemistry   start that
+/zt this is too slow    change the plan
 ```
 
-Two setup stages, deliberately. The first asks what cannot be measured later:
-which language to teach in, why you are studying, how deep you want to go.
-The second runs only after a course exists, because what a course needs
-depends on what it is for.
+One command. Say what you want, or say nothing and it continues from where
+the records leave off. It works out whether that means first-time setup,
+designing a course, teaching, running reviews, or rewriting the plan, and
+then does it rather than telling you which command to type next.
+
+There were nine commands. Nine means you have to know which of nine applies
+before you can say what you want, which is a menu standing in for a
+conversation, and in practice people used one and ignored the rest.
+
+Changing your mind mid-course goes through the same door. "Skip the proofs",
+"I need reinforcement learning before my internship", "go back to Tuesday" -
+all of those are plan changes, they get recorded with your reason, and the
+plugin refuses to quietly drop material you have already been taught without
+saying so.
+
+**Before the first lesson it asks one question: which language to teach in.**
+Everything else is asked when it matters - what you are studying for when a
+course is being designed, how you would rather write a formula before it sets
+one. Whenever something already said answers a question, it proposes the
+answer and asks you to correct it instead of asking you cold.
 
 It asks what you have studied. It never asks how well you know it: self-rated
 level correlates near zero with measured level and runs consistently high, so
@@ -218,7 +224,7 @@ which numbers are guesses and which are not.
 python -m pytest skills/zepteach/tests -q
 ```
 
-861 tests, run on Linux, macOS and Windows against Python 3.10 and 3.13. Many
+851 tests, run on Linux, macOS and Windows against Python 3.10 and 3.13. Many
 are worth reading on their own: each states, in its name and docstring, a
 specific way this could go wrong while still producing output that reads
 perfectly well.

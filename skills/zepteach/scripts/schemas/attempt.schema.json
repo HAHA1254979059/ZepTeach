@@ -179,6 +179,10 @@
       "items": {
         "type": "string"
       }
+    },
+    "execution_only": {
+      "type": "boolean",
+      "description": "True when every criterion about the idea was met and the only unmet ones were about carrying it out. Computed by grade.py from the rubric, not asserted. A concept is not moved backwards by one of these: the evidence it gives about the concept is positive, and the thing that went wrong is worth a redo of that step rather than a retest of the idea."
     }
   }
 }

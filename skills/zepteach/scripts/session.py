@@ -26,6 +26,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import constants as K
 import curriculum as cur
 import learner as ln
 import review as rv
@@ -426,8 +427,29 @@ def cmd_turn(args) -> int:
         print("that session is already closed", file=sys.stderr)
         return zs.EXIT_GATE
 
+    now = _utcnow()
+    last = zs._parse_dt(doc.get("last_turn_at") or doc.get("started"))
+    gap = int((now - last).total_seconds() // 60) if last else 0
     doc["turns_used"] = int(doc.get("turns_used", 0)) + int(args.count)
+    doc["last_turn_at"] = _iso(now)
     zs.atomic_write_json(p, doc)
+
+    if gap >= K.IDLE_GAP_MINUTES and not args.away:
+        print("GAP: " + str(gap) + " minutes since the last turn. Ask "
+              "whether they were away, and if so run: session.py turn "
+              "--session " + args.session + " --away " + str(gap) + ". Do "
+              "not guess - working slowly and being absent look identical "
+              "from here, and only one of them is study time.")
+
+    if args.away:
+        doc.setdefault("away", []).append({
+            "minutes": int(args.away), "from": _iso(now),
+            "noticed": "gap_between_turns" if gap >= K.IDLE_GAP_MINUTES
+                       else "learner_said"})
+        zs.atomic_write_json(p, doc)
+        print("recorded " + str(args.away) + " minutes away; it does not "
+              "count as study time. Review intervals still run on the "
+              "calendar, which is the one thing elapsed time is right for.")
 
     budget = int(doc["turn_budget"])
     every = max(3, math.ceil(budget * float(doc["checkpoint_at"])))
@@ -531,7 +553,13 @@ def cmd_close(args) -> int:
     now = _utcnow()
     doc["ended"] = _iso(now)
     started = zs._parse_dt(doc.get("started")) or now
-    doc["actual_minutes"] = max(0, int((now - started).total_seconds() // 60))
+    elapsed = max(0, int((now - started).total_seconds() // 60))
+    away = sum(int(a.get("minutes", 0)) for a in doc.get("away") or [])
+    doc["elapsed_minutes"] = elapsed
+    # Study time is elapsed time minus the time they were not here. The two
+    # were the same number until a learner spent an hour away mid-session
+    # and the log recorded an hour of study.
+    doc["actual_minutes"] = max(0, elapsed - away)
 
     attempts = [a for a in zs.read_jsonl(cdir / "attempts.jsonl")
                 if a.get("session_id") == args.session]
@@ -624,6 +652,9 @@ def build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("turn")
     sp.add_argument("--session", required=True)
     sp.add_argument("--count", type=int, default=1)
+    sp.add_argument("--away", type=int,
+                    help="minutes the learner was not here, which do not "
+                         "count as study time")
     sp.set_defaults(func=cmd_turn)
 
     sp = sub.add_parser("checkpoint")

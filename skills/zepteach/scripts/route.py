@@ -35,10 +35,10 @@ REF_DIR = Path(__file__).resolve().parents[1] / "references"
 # Each route: what to read, what to run, and what NOT to pull in yet.
 ROUTES = {
     "setup1": {
-        "what": "first-time setup: who is learning, in what language, "
-                "notes where",
+        "what": "first-time setup: one question, then start",
         "read": ["setup-stage1.md", "persona-zep.md"],
-        "run": ["intake.py known", "zt_state.py init",
+        "run": ["intake.py known", "intake.py next --group start",
+                "zt_state.py init",
                 "intake.py write --data <json>", "zt_state.py validate"],
         "defer": "environment probing belongs to setup2, after the study "
                  "goal exists",
@@ -46,7 +46,8 @@ ROUTES = {
     "course-new": {
         "what": "design a course from a goal",
         "read": ["curriculum-design.md", "adapter-contract.md"],
-        "run": ["curriculum.py register-concepts --course <slug>",
+        "run": ["intake.py next --group course",
+                "curriculum.py register-concepts --course <slug>",
                 "curriculum.py validate --course <slug>"],
         "agent": "zt-curriculum-architect",
         "defer": "teaching doctrine is not needed to plan a course",
@@ -58,6 +59,17 @@ ROUTES = {
                 "zt_state.py gate course-env --course <slug>"],
         "conditional": {"tools": ["resources-and-tools.md"]},
         "defer": "no teaching material yet; this is about what practice will land on",
+    },
+    "replan": {
+        "what": "change what is being learned, how fast, or how deep",
+        "read": ["curriculum-design.md", "persona-zep.md"],
+        "run": ["curriculum.py drift --course <slug>",
+                "curriculum.py replan --course <slug> --because <words> "
+                "--file <new-curriculum.json>"],
+        "then": {"lesson": "then carry on from wherever the new plan puts "
+                           "them"},
+        "defer": "the teaching doctrine does not load here. This is a "
+                 "decision about the course, not a lesson",
     },
     "upgrade": {
         "what": "bring a data root written by an older version up to date",
@@ -207,7 +219,58 @@ def state_of(root: Path) -> dict:
     }
 
 
-def next_step(root: Path, slug: str = None, said: str = None) -> dict:
+def alternatives(st: dict, courses: list) -> list:
+    """What else the learner could legitimately be asking for right now.
+
+    The state decides the default step. It cannot decide what a sentence
+    means, and this file is not going to pretend otherwise: keyword matching
+    on free text would have to be written in some particular language, would
+    be wrong often, and would be wrong invisibly.
+
+    So the division is that the script says which moves are available from
+    here, and whoever read the sentence picks. That works the same on every
+    host and does not need a second command for each case.
+    """
+    out = []
+    if courses:
+        out.append({
+            "intent": "replan",
+            "when": "they want to change the course itself - what is in it, "
+                    "how fast it goes, how deep it goes, or what it is for. "
+                    "Including 'this is too slow', 'skip this part', 'I need "
+                    "X for work next month'",
+        })
+        out.append({
+            "intent": "sidequest",
+            "when": "they are stuck on background knowledge this course "
+                    "never taught, and fixing it inline would lose the "
+                    "lesson",
+        })
+        out.append({
+            "intent": "status",
+            "when": "they are asking where things stand rather than asking "
+                    "to do anything",
+        })
+        out.append({
+            "intent": "notes",
+            "when": "they want what has been covered written down, or say "
+                    "the notes are wrong",
+        })
+        out.append({
+            "intent": "assess",
+            "when": "they want to know what they actually retain, as "
+                    "opposed to being taught more",
+        })
+    if len(courses) > 1:
+        out.append({
+            "intent": "course-new",
+            "when": "they are naming a subject none of the existing courses "
+                    "covers",
+        })
+    return out
+
+
+def _from_state(root: Path, slug: str = None, said: str = None) -> dict:
     """Which intent to run now, and what follows it.
 
     This exists because a learner should not have to know which of nine
@@ -417,6 +480,22 @@ def cmd_route(args) -> int:
     return zs.EXIT_OK
 
 
+def next_step(root: Path, slug: str = None, said: str = None) -> dict:
+    """The step the state points at, plus what else could be meant.
+
+    One entry point, and it has to cover everything a learner might open
+    their mouth to say - including "actually, can we go faster" halfway
+    through a course. Making them find a different command for that is how a
+    plugin ends up with nine ways in and a learner who uses one.
+    """
+    step = _from_state(root, slug, said)
+    if step["do"] != "upgrade":
+        step["instead_if"] = alternatives(step.get("state") or {},
+                                          (step.get("state") or {})
+                                          .get("courses") or [])
+    return step
+
+
 def cmd_next(args) -> int:
     """One command that decides what happens now, so the learner does not
     have to know which of nine applies."""
@@ -436,6 +515,11 @@ def cmd_next(args) -> int:
                if step.get("carry_on") else ""))
     if step.get("course"):
         print("COURSE  " + step["course"])
+    if step.get("instead_if"):
+        print("")
+        print("INSTEAD, if that is what they meant:")
+        for alt in step["instead_if"]:
+            print("  " + alt["intent"].ljust(12) + alt["when"])
 
     print("")
     res = resolve(step["do"], root, step.get("course"))

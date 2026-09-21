@@ -201,6 +201,42 @@ def score(verdict: dict, rubric: dict) -> dict:
     }
 
 
+def failure_kind(verdict: dict, rubric: dict) -> dict:
+    """Did the idea fail, or did carrying it out fail?
+
+    Merging these is a defect with a documented cost. A learner who
+    understood projection was retested on it three times running, each
+    retest set off by a different arithmetic slip, and eventually wrote:
+    those were calculation mistakes, I am clear on the concepts. Every one
+    of those retests was the system reading a slip as a gap.
+
+    The distinction cannot come from the answer - a wrong number looks the
+    same either way. It comes from the rubric, which was written before the
+    answer arrived and has to say, per criterion, what failing it means.
+    Criteria say `concept` unless they say otherwise, so an unmarked rubric
+    behaves exactly as it did.
+    """
+    met = verdict.get("criteria_met") or {}
+    unmet = [c for c in rubric.get("criteria", [])
+             if not met.get(c["criterion_id"], {}).get("met")]
+    unmet_concept = [c["criterion_id"] for c in unmet
+                     if c.get("kind", "concept") == "concept"]
+    unmet_execution = [c["criterion_id"] for c in unmet
+                       if c.get("kind") == "execution"]
+    return {
+        "execution_only": bool(unmet_execution) and not unmet_concept,
+        "unmet_concept": unmet_concept,
+        "unmet_execution": unmet_execution,
+        "what_to_do": (
+            "redo that step, nothing else. Setting another item on this "
+            "concept tests something the answer already showed"
+            if unmet_execution and not unmet_concept else
+            "the idea itself is what came apart; this is worth teaching into"
+            if unmet_concept else
+            "nothing outstanding"),
+    }
+
+
 def depth_shown(verdict: dict, rubric: dict) -> int:
     """The deepest criterion actually met, which is what the answer proved.
 
@@ -265,12 +301,19 @@ def cmd_check(args) -> int:
             print("instead: " + r.suggestion, file=sys.stderr)
         return zs.EXIT_GATE
     scored = score(verdict, rubric)
+    kind = failure_kind(verdict, rubric)
     if args.json:
         print(json.dumps({"checked": result, "score": scored,
+                          "failure_kind": kind,
                           "depth_demonstrated": depth_shown(verdict, rubric)},
                          ensure_ascii=False, indent=2))
     else:
         print(render(result, scored))
+        if kind["execution_only"]:
+            print("  EXECUTION ONLY: every criterion about the idea was "
+                  "met. Unmet: " + ", ".join(kind["unmet_execution"]))
+            print("  " + kind["what_to_do"])
+            print("  record this attempt with execution_only: true")
     return zs.EXIT_OK
 
 

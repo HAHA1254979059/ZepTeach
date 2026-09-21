@@ -164,3 +164,47 @@ corrupts the schedule.
 - Promoting anything on the strength of the learner agreeing
 - Asking the learner to self-assess and using the answer as evidence
 - Exceeding the turn budget because the conversation was going well
+
+## Ending a lesson, and moving on
+
+```
+curriculum.py advance --course <slug> --lesson <id>
+```
+
+It refuses while the lesson still has concepts nobody explained, or concepts
+explained that nobody has said back. Either finish them, or decide with the
+learner to leave them and record that:
+
+```
+curriculum.py defer --course <slug> --lesson <id> --concepts <a,b> --because <their words>
+```
+
+Both outcomes are fine. Drifting is not, and drifting is what happens by
+default, because going deeper always feels like the responsible choice from
+inside the lesson. One real lesson ran four hours on a course with five
+weeks to cover seventy-eight concepts, and nothing anywhere was tracking
+that. The learner had to say it.
+
+`curriculum.py` also reports when a lesson passes twice its estimate. That
+is a sentence to say out loud, not a stop - a lesson can be worth twice its
+estimate, and the thing that is worth nothing is nobody noticing.
+
+## Time they were not here is not study time
+
+`session.py turn` compares each turn against the last one. Past
+`idle_gap_minutes`, it says so and tells you to ask - working slowly and
+having walked away look identical from the outside, and only one of them is
+study time. If they were away:
+
+```
+session.py turn --session <id> --away <minutes>
+```
+
+That comes off `actual_minutes` and stays in `elapsed_minutes`. The two were
+one number until a learner spent over an hour away, twice in one session,
+and had to tell the system both times that the clock meant nothing.
+
+**Review intervals keep using the calendar.** Somebody who was away for a
+week has forgotten a week's worth whether or not they were studying. That is
+the one thing elapsed time is right for, and the reason the two numbers are
+kept apart rather than one being corrected into the other.

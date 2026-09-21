@@ -71,9 +71,10 @@ Everything is wired up. Slash commands in `commands/`, three subagents in
 The scripts and doctrine work unchanged. Three conveniences are missing, and
 each has a manual equivalent that keeps the property that mattered.
 
-**Slash commands** are plain markdown in `commands/`. Read the one you want:
-`commands/zt-learn.md` is what a teaching session does. They contain
-instructions, not platform syntax.
+**Slash commands** are one file, `commands/zt.md`, and it only tells you to
+run `route.py next --said "<what they said>"`. If your host has no slash
+commands, run that directly; nothing is lost, because the command file
+contains no logic of its own.
 
 **Subagent isolation** is the one that needs care, because it is a design
 property rather than a convenience.
@@ -118,7 +119,7 @@ It prints nothing when there is nothing to say.
 python -m pytest skills/zepteach/tests -q
 ```
 
-861 tests, no dependencies beyond pytest itself. They are worth reading:
+851 tests, no dependencies beyond pytest itself. They are worth reading:
 most of them state, in the test name and docstring, a specific way this could
 go wrong while still producing output that reads perfectly well.
 
@@ -138,9 +139,9 @@ Codex loads skills from `~/.agents/skills` for personal use, or from
 expects, so linking `skills/zepteach` into one of those is the whole install,
 and `$zepteach` invokes it.
 
-The nine files under `commands/` are plain Markdown instructions. Copy them
-into `~/.codex/prompts/` to get them as slash commands, or just read the one
-you need.
+`commands/zt.md` is a plain Markdown instruction with no platform syntax.
+Copy it into `~/.codex/prompts/` for a slash command, or ignore it: it only
+says to run `route.py next`, which you can do directly.
 
 Marking has to be kept separate by hand; see the subagent section above.
 

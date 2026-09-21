@@ -87,3 +87,34 @@ with something plausible.
 When it succeeds, say what happens next in one sentence: a course gets
 created, its goal is written as something they will be able to *do*, and only
 then does it make sense to work out what practice will act on.
+
+## Ask one group at a time, and only when it blocks something
+
+`intake.py next --group <start|course|notes|item>` returns only the questions
+standing between here and that thing. Before the first lesson that is one
+question: which language to teach in.
+
+The interview used to be nine questions in one message, and the first real
+learner's first complaint was exactly that - too much at once, split it into
+groups and ask each group when it matters. It is worse than tiring. Two of
+the nine asked them to decide what belonged in a course about a field they
+had not started, and the answer they gave was a guess that then sat in the
+records looking like a decision.
+
+**Propose, do not interrogate.** Whenever anything already said supports an
+answer, state it and ask them to correct it. Somebody who has just described
+their job has answered why they are studying; asking it back reads as not
+having listened, and it was the third thing they complained about. Keep an
+open question for what genuinely cannot be inferred.
+
+**The tone is not a question.** It was, with a one-to-five scale, and the
+learner's instruction was to stop asking: if the tone is wrong they will say
+so. Asking someone to predict their preference about an experience they have
+not had yet produces an answer worth less than a default they can correct.
+`persona.closeness` still exists, and is set when they say something, never
+by asking.
+
+**Notes get a place and an announcement, not a question.** They go under the
+data root, and the first time notes are written, say where. A stated default
+is correctable in one sentence; a required path is a decision about the end
+of a session standing in front of the first word of the first lesson.

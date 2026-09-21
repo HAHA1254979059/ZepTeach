@@ -1059,8 +1059,9 @@ def cmd_init(args) -> int:
         print("config.json present: setup stage 1 has run")
     else:
         print("config.json absent: setup stage 1 has NOT run yet.")
-        print("Stage 1 must ask the learner for: teaching language, notes "
-              "backend and location, how Zep addresses them, and pacing.")
+        print("One question blocks starting: which language to teach in.")
+        print("Everything else is asked when it matters - run "
+              "intake.py next --group start, then get on with it.")
         print("None of these are defaulted on their behalf.")
     return EXIT_OK
 
