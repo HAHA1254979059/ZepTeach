@@ -119,7 +119,7 @@ It prints nothing when there is nothing to say.
 python -m pytest skills/zepteach/tests -q
 ```
 
-853 tests, no dependencies beyond pytest itself. They are worth reading:
+856 tests, no dependencies beyond pytest itself. They are worth reading:
 most of them state, in the test name and docstring, a specific way this could
 go wrong while still producing output that reads perfectly well.
 
@@ -133,6 +133,9 @@ Every doctrine file opens by naming which principle it implements. A file
 that cannot name one should not exist.
 
 ## On Codex
+
+This repository includes `.codex-plugin/plugin.json`, so the checkout is a
+native Codex plugin source without a separate manifest-generation step.
 
 Codex loads skills from `~/.agents/skills` for personal use, or from
 `<repo>/.agents/skills` for one project. The layout here is already what it

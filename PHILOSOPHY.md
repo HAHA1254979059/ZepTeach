@@ -221,7 +221,7 @@ in working memory.
 **Also addresses**: complaint 4 (cost), complaint 14 (sessions that run too
 long).
 
-### Principle 5 — Practising several topics mixed together is harder than practising one at a time, and produces better results ⚠️ not yet built
+### Principle 5 — Practising several topics mixed together is harder than practising one at a time, and produces better results
 
 **Evidence**: Rohrer and Taylor. With the same number of problems and the same
 spacing, mixing topics produces worse performance during the practice session
@@ -231,18 +231,14 @@ requires choosing which method a problem calls for. When all the problems in a
 set use the same method, the learner is told which method to use by the
 structure of the set itself, so choosing is never practised.
 
-**Current state**: exercises and recorded answers can be marked as belonging to
-a mixed set, and are refused if they involve fewer than two concepts. The part
-that assembles mixed sets does not exist. The design as it stands teaches the
-concepts in one lesson and then practises those same concepts, which is exactly
-the arrangement the evidence says is worse.
+**What it became**: `exercise.py drill` assembles a set across concepts and
+lessons, alternates concepts rather than grouping them, and excludes prompts
+that reveal the method. `is_really_mixed` checks the completed set because a
+sequence can be blocked practice even when every item looks acceptable alone.
+Once two concepts are practised, the session rules require an interleaved
+drill rather than offering one as an option.
 
-**What it must become**: exercise assembly must be able to draw from several
-concepts and several past lessons at once, and **must include problems whose
-wording does not indicate which method applies.** This is a requirement of the
-exercise system, not an option within it.
-
-### Principle 6 — Having the learner produce the answer beats explaining it to them ⚠️ partly built
+### Principle 6 — Having the learner produce the answer beats explaining it to them
 
 **Evidence**: the self-explanation effect (Chi) — students who spontaneously
 explain material to themselves while studying score more than twice as high on
@@ -252,17 +248,12 @@ been taught, allowing them to fail at it, and only then teaching it** produces
 better conceptual understanding than teaching first, and does not reduce their
 ability to carry out the procedure.
 
-**Current state**: the mode-selection rules include attempting before being
-taught, and explaining the material back can be recorded as its own kind of
-evidence rather than being one exercise type among many. What is missing is
-anything that requires explaining back to happen.
-
-**What it must become**:
+**What it became**:
 
 - For conceptual material, attempting before being taught is preferred over
   teaching then practising.
 - Every lesson ends with the learner restating the material without help, and
-  failing to do so is recorded as evidence rather than passed over.
+  `curriculum.py advance` refuses to move on while an explain-back is owed.
 
 ### Principle 7 — Applying knowledge in a new setting does not happen automatically
 
@@ -275,10 +266,8 @@ similar but work differently underneath, transfer frequently fails.
 
 **What it becomes**:
 
-- A test of transfer must state which of the six dimensions it stretched,
-  rather than being described as taking place in a new setting. The criterion
-  currently in the code — that the item is open-ended, or involves two or more
-  concepts — stretches only the first dimension.
+- A test of transfer states which of the six dimensions it stretched, rather
+  than being described only as taking place in a new setting.
 - Open-ended items must be set in real situations, which is what stretches the
   academic-versus-real dimension.
 - Keeping concepts globally unique and shared between courses creates
@@ -521,33 +510,25 @@ process of getting to the material.**
 
 ---
 
-## 4. Gaps this document exposed
+## 4. Gaps this document exposed, and what happened to them
 
 Writing this document identified three genuine gaps. These were not things done
-badly; they were things not considered at all.
+badly; they were things not considered at all. All three are now built; the
+table remains here because it records why the mechanisms exist.
 
-| Gap | Principle it violates | Severity | Where it belongs |
+| Gap | Principle it violates | Severity | Implementation |
 |---|---|---|---|
-| **No mixed practice anywhere** | 5 | High. The current design practises one topic at a time, and the evidence says that halves the score on a test the next day | Exercise system, required |
-| **Nothing requires attempting before being taught, or explaining back** | 6 | High. Teaching happens before any attempt, which gives up the benefit of having the learner produce the answer | Mode-selection rules (done) and the exercise system |
-| **The criterion for a transfer test is too weak** | 7 | Medium. It stretches one of Barnett and Ceci's six dimensions | Exercise system, revise the criterion |
+| **No mixed practice anywhere** | 5 | High. Single-topic practice removes the need to choose a method | `exercise.py drill`, whole-set validation, and a mandatory session drill |
+| **Nothing requires attempting before being taught, or explaining back** | 6 | High. Teaching first gives up the benefit of learner production | productive-failure routing, explain-back items, and the lesson-advance gate |
+| **The criterion for a transfer test is too weak** | 7 | Medium. The earlier rule stretched only one of six dimensions | explicit `transfer_dimensions` plus strength reporting |
 
-Two further gaps, smaller:
+Two further gaps were also closed:
 
-- **There is no stated policy on when to give feedback.** Kulik and Kulik found
-  that the best timing depends on the situation: immediate feedback works
-  better for classroom practice, delayed feedback works better for laboratory
-  learning. The system currently gives feedback immediately, with no stated
-  reason for doing so. The teaching contract needs a policy that varies by the
-  type of material.
-- **The sequence used for explanations has no evidence behind it.** It
-  currently runs from the observable phenomenon, to an intuitive picture, to
-  the simplest model that captures it, to the formal statement, to where it
-  breaks down. That sequence was invented rather than derived. It also
-  conflicts with Principle 3: for a learner with grounding in the field, the
-  first two steps are material they do not need. The sequence has to be
-  shortenable depending on the learner's setting for that field, rather than
-  being the same for everyone.
+- **Feedback timing** is now set by item type in `teaching-contract.md` rather
+  than applied globally.
+- **The explanation sequence** is now trimmable by the learner's register.
+  Experts start at the model or formal statement; beginners can start from the
+  phenomenon or intuitive picture. The boundary remains mandatory for all.
 
 ---
 

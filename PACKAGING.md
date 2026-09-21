@@ -11,7 +11,8 @@ them when they set up a course, and they live in the learning data root
 
 | Path | Why it is allowed |
 |---|---|
-| `.claude-plugin/plugin.json` | manifest |
+| `.claude-plugin/plugin.json` | Claude Code manifest |
+| `.codex-plugin/plugin.json` | Codex manifest |
 | `skills/zepteach/SKILL.md` | routing table |
 | `skills/zepteach/references/*.md` | teaching doctrine — method only |
 | `skills/zepteach/scripts/*.py` | state engine and gates |

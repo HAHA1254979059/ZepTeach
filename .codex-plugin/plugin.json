@@ -1,0 +1,37 @@
+{
+  "name": "zepteach",
+  "version": "0.1.0",
+  "description": "A local, state-driven learning system with durable learner records, isolated grading, and spaced retesting.",
+  "author": {
+    "name": "zhanzepp",
+    "url": "https://github.com/HAHA1254979059"
+  },
+  "homepage": "https://github.com/HAHA1254979059/ZepTeach",
+  "repository": "https://github.com/HAHA1254979059/ZepTeach",
+  "license": "MIT",
+  "keywords": [
+    "learning",
+    "teaching",
+    "tutoring",
+    "spaced-repetition",
+    "assessment"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "ZepTeach",
+    "shortDescription": "Structured teaching with durable learning records",
+    "longDescription": "Build and run long-term courses with learner records, source-anchored lessons, executable exercises, isolated grading, delayed review, and progress tracking.",
+    "developerName": "zhanzepp",
+    "category": "Education",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/HAHA1254979059/ZepTeach",
+    "defaultPrompt": [
+      "Teach me a subject as a structured course",
+      "Continue my course and review what is due",
+      "Assess what I retained and adjust the plan"
+    ]
+  }
+}

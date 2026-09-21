@@ -107,6 +107,10 @@ linking rather than skipping.
 
 ### Codex
 
+The repository includes a native Codex plugin manifest at
+`.codex-plugin/plugin.json`, so this checkout is a valid Codex plugin source
+without a separate manifest-generation step.
+
 Codex reads skills from `~/.agents/skills` for personal use, or from
 `<repo>/.agents/skills` for one project. The layout ZepTeach already has —
 `SKILL.md` beside `scripts/` and `references/` — is exactly what Codex
@@ -224,7 +228,7 @@ which numbers are guesses and which are not.
 python -m pytest skills/zepteach/tests -q
 ```
 
-853 tests, run on Linux, macOS and Windows against Python 3.10 and 3.13. Many
+856 tests, run on Linux, macOS and Windows against Python 3.10 and 3.13. Many
 are worth reading on their own: each states, in its name and docstring, a
 specific way this could go wrong while still producing output that reads
 perfectly well.

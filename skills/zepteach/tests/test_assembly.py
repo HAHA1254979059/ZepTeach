@@ -37,6 +37,10 @@ def text(p):
     return p.read_text(encoding="utf-8")
 
 
+def manifest(host):
+    return json.loads(text(PLUGIN / ("." + host + "-plugin") / "plugin.json"))
+
+
 def frontmatter(p):
     body = text(p)
     if not body.startswith("---"):
@@ -124,6 +128,24 @@ class TestCommands:
         for intent in ("replan", "sidequest", "notes", "status", "assess"):
             assert intent in reachable, intent
             assert intent in step_names, intent
+
+
+class TestPluginManifests:
+    def test_both_hosts_have_a_manifest(self):
+        assert (PLUGIN / ".claude-plugin" / "plugin.json").is_file()
+        assert (PLUGIN / ".codex-plugin" / "plugin.json").is_file()
+
+    def test_manifest_identity_cannot_drift_between_hosts(self):
+        claude = manifest("claude")
+        codex = manifest("codex")
+        for field in ("name", "version"):
+            assert claude[field] == codex[field]
+
+    def test_codex_manifest_exposes_the_skill(self):
+        codex = manifest("codex")
+        assert codex["skills"] == "./skills/"
+        assert codex["interface"]["displayName"] == "ZepTeach"
+        assert codex["interface"]["defaultPrompt"]
 
 
 class TestSubagents:
