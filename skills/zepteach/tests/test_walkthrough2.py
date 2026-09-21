@@ -94,6 +94,7 @@ class TestAnItemMayNotGoDeeperThanTheTarget:
         return {"schema_version": 1, "exercise_id": "e", "course_id": "c",
                 "concept_ids": ["x.y"], "tier": "variant", "prompt": "q",
                 "depth": depth,
+                "response": {"mode": "free_text"},
                 "grader": {"type": "numeric", "tolerance": 0.1}}
 
     def test_an_item_past_the_target_is_refused(self):

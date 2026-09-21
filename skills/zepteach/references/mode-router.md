@@ -60,20 +60,34 @@ anything where a wrong first attempt would be rehearsed rather than examined.
 
 How to run it:
 
-1. **Run `learner.py teach` first**, before posing anything. The teaching
-   event means "the lesson on this concept has begun", not "an explanation
-   has been delivered" — it is the timestamp every review interval is
-   measured from. Skip it and the attempt cannot be recorded at all:
-   `learner.py record` refuses an attempt on a concept with no teaching
-   event, exit 3.
+1. **Mark the first attempt `kind: probe`.** That is the one kind allowed on
+   a concept nothing has explained yet, and it exists so that this mode can
+   run: `learner.py record` refuses any other kind of attempt on an
+   unexplained concept, exit 3.
+
+   This used to say to run `learner.py teach` first, on the grounds that the
+   teaching event meant the lesson had begun rather than that anything had
+   been explained. That reading is gone. Recording teaching now means
+   recording what was said, which in this mode has not happened yet — the
+   whole point of the mode is that it happens at step 5.
 2. Give a problem that needs the concept, without naming it.
 3. Let them work. Do not rescue. A wrong complete attempt is the product.
 4. Ask what they tried and where it stopped working. Their account of the
    failure is the material the teaching attaches to.
-5. Now teach — and point at the specific place their attempt broke.
-6. Record the attempt with `kind: inclass` and real `failure_points`.
+5. Record the attempt: `kind: probe`, with real `failure_points`. Probes
+   never move state, which is what makes it safe to hand someone something
+   they cannot yet do.
    **A failed first attempt in this mode is not a bad outcome and must not be
    framed as one.**
+6. Now teach — pointing at the specific place their attempt broke — and
+   record the explanation with `learner.py teach`, setting
+   `led_by: after_failed_attempt` and `opened_by_attempt` to that probe's id.
+   Everything after this point is an ordinary `inclass` attempt.
+
+   Step 6 is the one that goes missing. The first five are vivid and the
+   sixth is the payload; in the first real use of this plugin the pattern
+   ran over and over with the explanation never arriving, and nothing
+   noticed because nothing measured it. It is now measured.
 
 Say what is happening up front, once: 这题还没教，先试，卡住是正常的。
 Without that framing the learner reads it as being set up to fail.

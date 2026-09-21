@@ -98,7 +98,8 @@ def check_depth(item: dict, depth_targets: dict = None) -> None:
             "course doubles in length without anyone deciding to")
 
 
-def check_issuable(item: dict, depth_targets: dict = None) -> dict:
+def check_issuable(item: dict, depth_targets: dict = None,
+                   notation_input=None) -> dict:
     """Everything that must be true before an item may be put in front of
     someone. Raises rather than returning a verdict, so a caller that forgets
     to look at the result still does not issue anything."""
@@ -144,8 +145,80 @@ def check_issuable(item: dict, depth_targets: dict = None) -> dict:
     if item.get("transfer_dimensions"):
         check_transfer(item)
 
+    check_response(item, notation_input)
+
     return {"ok": True, "exercise_id": item.get("exercise_id"),
-            "tier": tier or "none (explain-back)"}
+            "tier": tier or "none (explain-back)",
+            "response_mode": (item.get("response") or {}).get("mode")}
+
+
+# ---------------------------------------------------------------------------
+# how the answer gets supplied
+# ---------------------------------------------------------------------------
+
+def check_response(item: dict, notation_input=None) -> None:
+    """Refuse an item that has not decided how it will be answered.
+
+    The reason this is a gate and not advice: when it was neither, the shape
+    of the answer got decided in the moment. In the first real use that
+    produced a good interactive form, and then, about twenty minutes later,
+    a silent return to walls of prose, because nothing on disk remembered
+    the decision and nothing could refuse an item that ignored it. The
+    learner had to notice and complain. That is the same failure as a
+    doctrine file claiming an enforcement the code never had.
+    """
+    resp = item.get("response") or {}
+    mode = resp.get("mode")
+    if not mode:
+        raise Refused(
+            "EXE020",
+            "this item does not say how it is to be answered",
+            "choose a response mode now. Deciding in the moment is how a "
+            "whole session drifts back to typing paragraphs without anyone "
+            "choosing that")
+
+    if mode == "choice":
+        options = resp.get("options") or []
+        if len(options) < 2:
+            raise Refused(
+                "EXE021", "a choice item with fewer than two options",
+                "write the wrong answers as things someone could actually "
+                "believe. Options nobody would pick make a free pass that "
+                "looks like an assessment")
+        texts = [str(o.get("text", "")).strip().lower() for o in options]
+        if len(set(texts)) != len(texts):
+            raise Refused(
+                "EXE022", "two options in this choice item say the same thing",
+                "duplicate options shrink the real choice without shrinking "
+                "the apparent one")
+
+    if mode == "fill_blanks" and not (resp.get("fields") or []):
+        raise Refused(
+            "EXE023", "fill_blanks, but no slots are named",
+            "name the slots. Unnamed slots mean the answer comes back as a "
+            "paragraph and cannot be stored as data or compared with the "
+            "next attempt")
+
+    if notation_input is None:
+        return
+
+    wants_notation = bool(resp.get("expects_notation")) or any(
+        f.get("expects_notation") for f in resp.get("fields") or [])
+    if not wants_notation:
+        return
+
+    channels = set(notation_input or [])
+    if mode in ("free_text", "fill_blanks", "numeric") and not (
+            channels & {"types_plain", "types_markup"}):
+        raise Refused(
+            "EXE024",
+            "answering this means writing notation, and this learner did not "
+            "say they would type it",
+            "they said they can supply notation by: " +
+            (", ".join(sorted(channels)) or "no channel at all") + ". Offer "
+            "candidates to choose between, or accept a photograph of work "
+            "done on paper. Making someone type what is painful to type "
+            "measures their patience, not their understanding")
 
 
 # ---------------------------------------------------------------------------
@@ -331,6 +404,12 @@ def explain_back_item(concept_id: str, course_id: str = "") -> dict:
                   "needed, and where does it stop working?",
         "grader": {"type": "rubric"},
         "rubric_id": "explain-back",
+        # Said back unaided is the whole point, so there is nothing to choose
+        # between and nothing to fill in. This is the one item whose response
+        # mode is not a decision.
+        "response": {"mode": "free_text",
+                     "why": "saying it back in their own words is the "
+                            "evidence; supplying the words would remove it"},
         "created": _now(),
     }
 
@@ -424,6 +503,49 @@ def cmd_tiers(args) -> int:
     return zs.EXIT_OK
 
 
+def cmd_issue(args) -> int:
+    """Check an item and keep it.
+
+    Items used to exist only in the conversation. That is why nothing could
+    later ask what a learner had actually been shown: an explanation could
+    not be checked against the questions it was supposedly separate from, a
+    verdict pointed at an exercise_id nobody could look up, and a retest
+    could not reuse an item because the item was gone.
+    """
+    root = zs.default_root() if not args.root else Path(args.root)
+    item = json.loads(Path(args.file).read_text(encoding="utf-8"))
+
+    errors = zs.validate_doc(item, "exercise")
+    if errors:
+        for e in errors:
+            print("invalid item: " + str(e), file=sys.stderr)
+        return zs.EXIT_VALIDATION
+
+    cdir = root / "courses" / args.course
+    if not cdir.exists():
+        print("no such course: " + args.course, file=sys.stderr)
+        return zs.EXIT_NOT_FOUND
+
+    profile_path = root / "learner" / "profile.json"
+    notation = None
+    if profile_path.exists():
+        notation = zs.read_json(profile_path).get("notation_input")
+
+    try:
+        result = check_issuable(item, notation_input=notation)
+    except Refused as r:
+        print("REFUSED [" + r.code + "]  " + r.message, file=sys.stderr)
+        if r.suggestion:
+            print("instead: " + r.suggestion, file=sys.stderr)
+        return zs.EXIT_GATE
+
+    item.setdefault("created", _now())
+    zs.append_jsonl(cdir / "exercises.jsonl", item)
+    print("issued " + str(item.get("exercise_id")) + "  answered by " +
+          str(result["response_mode"]))
+    return zs.EXIT_OK
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="exercise.py",
@@ -436,6 +558,12 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--data")
     sp.add_argument("--file")
     sp.set_defaults(func=cmd_check)
+
+    sp = sub.add_parser("issue", help="check an item and write it down")
+    sp.add_argument("--course", required=True)
+    sp.add_argument("--file", required=True)
+    sp.add_argument("--root")
+    sp.set_defaults(func=cmd_issue)
 
     sp = sub.add_parser("drill", help="assemble a mixed set")
     sp.add_argument("--pool", required=True)

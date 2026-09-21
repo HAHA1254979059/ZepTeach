@@ -121,12 +121,40 @@ Also record `depth_demonstrated` (1-5) on every pass: the depth this answer
 actually proved, not what the item aimed at. Without it the depth ceiling
 cannot be enforced and a concept drifts past its target unnoticed.
 
+## The explanation is recorded, in the words it was given in
+
+`learner.py teach --course <slug> --file <exposition.json>` takes what was
+said: the rungs of the ladder that were covered, each one holding the actual
+text the learner saw; every term introduced, with a definition they can act
+on; every analogy, cashed out and bounded; and the boundary. `teaching.py`
+refuses it if any of that is missing, and `learner.py record` refuses an
+attempt on a concept with no explanation on file from before the answer was
+given.
+
+The check worth knowing about is the last one. **The explanation has to exist
+somewhere other than inside the questions asked about the concept.** The
+failure it catches is not skipping the explanation; it is folding it into
+the stem of the item being marked — "the prior is your belief before the
+evidence; so which quantity is the prior here?" — which reads like teaching
+while making the learner extract the definition from the thing they are
+being assessed on.
+
+`teaching.py ladder` prints the rungs and where each register joins them.
+
 ## Anti-fluency checks
 
-Before ending a teaching turn:
+Before ending a teaching turn, both directions:
 
 1. Did the learner produce anything, or did I only deliver? If only
    delivered, the turn is not finished.
+
+1b. **Did I explain anything, or did I only assess?** If every message this
+   turn was a question, the turn was an examination. This check is the twin
+   of the one above and it was missing for a long time, with the predictable
+   result: every gate in the system pointed at what the learner produced, so
+   the half nothing measured is the half that disappeared. Three lessons
+   went by as twenty-five assessment items and almost no teaching, and the
+   learner had to be the one to say so.
 2. Was the boundary (rung 5) stated, every new term given an operational
    definition, every analogy cashed out and bounded?
 3. Am I about to record progress from the learner nodding along? Nodding is

@@ -25,8 +25,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import review as rv  # noqa: E402
+import teaching as tp  # noqa: E402
 import zt_state as zs  # noqa: E402
 from constants import BYPASS_WARNING_COUNT  # noqa: E402
+from sandbox import Refused  # noqa: E402
 
 MASTERY_REL = "learner/mastery.jsonl"
 
@@ -208,6 +210,37 @@ def ensure_row(rows: list, concept_id: str, course_id: str,
     return row
 
 
+def load_expositions(root: Path) -> list:
+    """Every explanation on file, from every course.
+
+    Root-wide rather than per-course, for the same reason evidence is: a
+    concept belongs to the learner, not to a course. Having had it explained
+    in one course and then meeting it in another is the ordinary case, and
+    demanding it be explained again there would be asking for a second
+    delivery of something already delivered. What differs between courses is
+    the register and the depth target, and those are handled where they
+    belong.
+    """
+    out = []
+    courses = root / "courses"
+    if courses.exists():
+        for cdir in sorted(courses.iterdir()):
+            if cdir.is_dir():
+                out.extend(zs.read_jsonl(cdir / "expositions.jsonl"))
+    return out
+
+
+def _items_on(cdir: Path, concept_id: str) -> list:
+    """Every item issued on one concept.
+
+    Read from disk rather than passed in, because the check it feeds - that
+    an explanation exists somewhere other than inside the questions - is
+    worth nothing if it can be satisfied by not mentioning the questions.
+    """
+    return [it for it in zs.read_jsonl(cdir / "exercises.jsonl")
+            if concept_id in (it.get("concept_ids") or [])]
+
+
 def depth_target_in(curriculum: dict, concept_id: str, default=3) -> int:
     for mod in curriculum.get("modules", []):
         for les in mod.get("lessons", []):
@@ -368,44 +401,105 @@ def cmd_probe(args) -> int:
 
 
 def cmd_teach(args) -> int:
-    """Mark concepts as taught. This is a real event, not something inferred
-    from the first exercise: every gap the review schedule measures is
-    measured from here, so a lesson on Monday practised on Friday must not
-    silently baseline itself to Friday."""
+    """Record one concept actually being explained, and mark it taught.
+
+    This used to take three strings and no content: a course, a lesson, and a
+    list of concept ids. It flipped the state to `introduced` on the strength
+    of being called. That made "I taught this" free to say, in a system where
+    "they passed this" costs a quote from their answer, and the first real
+    use went where the incentives pointed - the teaching went to nearly zero
+    and every gate stayed green.
+
+    So it now takes what was said, the same way marking takes the answer.
+    See teaching.py for what the explanation has to contain.
+
+    Every review interval is still measured from here, so a lesson on Monday
+    practised on Friday must not baseline itself to Friday.
+    """
     root = _root(args)
-    _cdir, course, curriculum = _course(root, args.course)
-    les = _lesson(curriculum, args.lesson)
-    if les is None:
-        print("no such lesson: " + args.lesson, file=sys.stderr)
+    cdir, course, curriculum = _course(root, args.course)
+
+    expo = (json.loads(args.data) if args.data
+            else json.loads(Path(args.file).read_text(encoding="utf-8")))
+
+    errors = zs.validate_doc(expo, "exposition")
+    if errors:
+        for e in errors:
+            print("invalid exposition: " + str(e), file=sys.stderr)
+        return zs.EXIT_VALIDATION
+
+    cid = expo.get("concept_id")
+    if cid not in zs.registry_ids(root):
+        print("no such concept in the registry: " + str(cid), file=sys.stderr)
         return zs.EXIT_NOT_FOUND
 
-    wanted = set(args.concepts.split(",")) if args.concepts else None
-    when = args.at or rv._iso(rv._utcnow())
+    lesson_id = expo.get("lesson_id") or args.lesson
+    les = _lesson(curriculum, lesson_id) if lesson_id else None
+    if lesson_id and les is None:
+        print("no such lesson: " + str(lesson_id), file=sys.stderr)
+        return zs.EXIT_NOT_FOUND
+    if les is not None:
+        in_lesson = set(c.get("concept_id") for c in les.get("concepts") or [])
+        if cid not in in_lesson:
+            print("GATE FAILED: " + cid + " is not one of the concepts in "
+                  "lesson " + str(lesson_id) + ". Either the wrong lesson is "
+                  "named or this explanation belongs to a sidequest.",
+                  file=sys.stderr)
+            return zs.EXIT_GATE
+
+    prompts = []
+    for path in args.item or []:
+        doc = json.loads(Path(path).read_text(encoding="utf-8"))
+        if doc.get("prompt"):
+            prompts.append(doc["prompt"])
+    if not prompts:
+        prompts = [it.get("prompt") for it in _items_on(cdir, cid)
+                   if it.get("prompt")]
+
+    reg = register_for(get_profile(root), course.get("domain"))
+    try:
+        checked = tp.check_exposition(
+            expo, prompts,
+            require_operational_definition=bool(
+                reg.get("require_operational_definition", True)))
+    except Refused as r:
+        print("REFUSED [" + r.code + "]  " + r.message, file=sys.stderr)
+        if r.suggestion:
+            print("instead: " + r.suggestion, file=sys.stderr)
+        return zs.EXIT_GATE
+
+    when = expo.get("delivered_at") or args.at or rv._iso(rv._utcnow())
+    expo.setdefault("delivered_at", when)
+    zs.append_jsonl(cdir / "expositions.jsonl", expo)
+
     rows = load_mastery(root)
     course_id = course.get("course_id")
-    touched = []
-    for c in les.get("concepts", []) or []:
-        cid = c.get("concept_id")
-        if wanted and cid not in wanted:
-            continue
-        row = ensure_row(rows, cid, course_id, c.get("depth_target", 3))
-        state = row.get("state", "unseen")
-        if state == "unseen":
-            row["state"] = "introduced"
-            row["first_taught"] = when
-            touched.append((cid, "introduced"))
-        else:
-            row.setdefault("first_taught", when)
-            touched.append((cid, "already " + state))
-        row["updated"] = when
+    depth = 3
+    if les is not None:
+        for c in les.get("concepts") or []:
+            if c.get("concept_id") == cid:
+                depth = c.get("depth_target", 3)
+    row = ensure_row(rows, cid, course_id, depth)
+    state = row.get("state", "unseen")
+    if state == "unseen":
+        row["state"] = "introduced"
+        row["first_taught"] = when
+        what = "introduced"
+    else:
+        row.setdefault("first_taught", when)
+        what = "already " + state + ", explanation recorded"
+    row["updated"] = when
 
     findings = save_mastery(root, rows)
     if any(f.severity == "error" for f in findings):
         for f in findings:
             print(str(f), file=sys.stderr)
         return zs.EXIT_VALIDATION
-    for cid, what in touched:
-        print(cid + ": " + what)
+
+    print(cid + ": " + what)
+    print("  rungs " + ", ".join(str(r) for r in checked["rungs_covered"]))
+    if checked["note"]:
+        print("  note: " + checked["note"])
     return zs.EXIT_OK
 
 
@@ -431,14 +525,26 @@ def cmd_record(args) -> int:
     course_id = course.get("course_id")
 
     by_id = _by_concept(rows)
-    untaught = [c for c in att.get("concept_ids", [])
-                if (by_id.get(c) or {}).get("state", "unseen") == "unseen"
-                and att.get("kind") != "probe"]
+    # Was this concept ever actually explained, before this answer was given?
+    #
+    # This used to ask the mastery state instead, which only recorded that a
+    # command had been called. The command took no content, so the check
+    # amounted to asking the teacher whether it had taught, and the answer was
+    # always yes. It now asks the explanations on file, which have to contain
+    # what was said and have to say it somewhere other than inside the
+    # questions. A probe is still exempt: being asked something untaught is
+    # what a probe is for.
+    untaught = tp.untaught_in(load_expositions(root),
+                              att.get("concept_ids", []),
+                              att.get("submitted_at") or "",
+                              att.get("kind"))
     if untaught:
-        print("GATE FAILED: no record of teaching " + ", ".join(untaught) +
-              ". Run learner.py teach --course " + args.course +
-              " --lesson <id> first, so the review schedule is measured from "
-              "when it was actually taught.", file=sys.stderr)
+        print("GATE FAILED: nothing on file explains " + ", ".join(untaught) +
+              " from before this answer was given. Record the explanation "
+              "with learner.py teach --course " + args.course +
+              " --file <exposition.json> first. If the point was to let them "
+              "try it untaught, this attempt is a probe and should say so.",
+              file=sys.stderr)
         return zs.EXIT_GATE
 
     changed = []
@@ -548,10 +654,15 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--json", action="store_true")
     sp.set_defaults(func=cmd_probe)
 
-    sp = sub.add_parser("teach")
+    sp = sub.add_parser("teach", help="record one concept being explained")
     sp.add_argument("--course", required=True)
-    sp.add_argument("--lesson", required=True)
-    sp.add_argument("--concepts", help="comma separated subset of the lesson")
+    sp.add_argument("--file", help="an exposition document")
+    sp.add_argument("--data", help="the same document inline")
+    sp.add_argument("--lesson", help="only when the document omits lesson_id")
+    sp.add_argument("--item", action="append",
+                    help="an item asked on this concept; repeatable. Usually "
+                         "unnecessary - the items issued on it are read from "
+                         "the course")
     sp.add_argument("--at", help="ISO timestamp, for testing")
     sp.set_defaults(func=cmd_teach)
 

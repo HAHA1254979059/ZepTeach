@@ -58,23 +58,37 @@ learner.py probe --course <slug> --lesson <id>
 - `ASSUMED BACKGROUND`: candidates for a sidequest. Do not teach them inline;
   that is how the main thread gets lost.
 
-## 5. Record that teaching happened
+## 5. Record what was explained
 
 ```
-learner.py teach --course <slug> --lesson <id> --concepts <a,b>
+learner.py teach --course <slug> --file <exposition.json>
 ```
 
-"Taught" means **the lesson on this concept has begun**, not that an
-explanation has been delivered. That is why it comes first even in
-productive-failure mode, where the explanation comes last: every review
-interval is measured from this timestamp, and an attempt on a concept with no
-teaching event is refused outright.
+One concept, one explanation, containing what was actually said. This is the
+step that used to read: "taught" means the lesson has begun, not that an
+explanation has been delivered. That sentence was in this file for weeks and
+it was the whole defect. It made starting a lesson and teaching it the same
+recorded event, so the second one could be skipped without anything noticing,
+and in the first real use it was: twenty-five assessment items across three
+lessons and almost nothing said.
 
-**Pass `--concepts` to match the new-concept cap.** Without it the command
-marks every concept in the lesson as taught, which on a low-energy session
-with a cap of 1 silently starts the clock on two or three concepts that will
-not be touched today. Their first retest then comes due having never been
-practised.
+What the document has to contain is in `teaching-contract.md`, and what will
+be refused is in `teaching.py`. The check that matters most: the explanation
+has to exist somewhere other than inside the questions asked about the
+concept. Folding a definition into the stem of an item reads like teaching
+and is assessment.
+
+**In productive-failure mode this step comes after the first attempt, not
+before.** Give them the untaught thing, let it fail, then explain into the
+gap and record that. Mark the first attempt `kind: probe`; probes are the one
+kind allowed on an unexplained concept, precisely so this order is possible.
+
+Every review interval is measured from `delivered_at`, so a lesson on Monday
+practised on Friday must not baseline itself to Friday.
+
+**One call per concept, matching the new-concept cap.** There is no longer a
+way to mark a whole lesson taught at once. Scoping that call used to be a
+convention here; it was never enough, because the call was free either way.
 
 ## 6. Teach
 

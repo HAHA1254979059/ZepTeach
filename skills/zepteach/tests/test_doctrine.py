@@ -212,11 +212,23 @@ class TestTheResearchDrivenRequirements:
         assert "What may be dropped after a checkpoint" in s
         assert "must not be dropped" in s
 
-    def test_the_protocol_records_teaching_before_the_lesson(self):
+    def test_the_protocol_records_what_was_explained(self):
+        """This test used to assert the opposite, and the sentence it
+        asserted was the defect.
+
+        It required the protocol to say that "taught" means the lesson has
+        begun rather than that an explanation has been delivered. That made
+        starting a lesson and teaching it one recorded event, so the second
+        could go missing without anything noticing - and across three
+        lessons of real use, it did.
+        """
         s = text(REF_DIR / "session-protocol.md")
         assert "learner.py teach" in s
-        assert "the lesson on this concept has begun" in s
-        assert "is refused outright" in s
+        assert "exposition" in s
+        assert "the lesson has begun, not that an" in s, (
+            "the old reading should be quoted as the thing that was wrong, "
+            "not silently dropped")
+        assert "one concept, one explanation" in s.lower()
 
 
 class TestTheRouteMatchesWhatExists:

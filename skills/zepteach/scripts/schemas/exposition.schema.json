@@ -1,0 +1,145 @@
+{
+  "$id": "exposition",
+  "title": "A record of one concept actually being explained",
+  "description": "The teaching-side counterpart of an attempt. An attempt records what the learner produced; an exposition records what the teacher delivered, in the teacher's own words, before any non-probe item on that concept may be marked. It exists because every gate in this system used to check only the learner's output. Marking had to quote the answer, while teaching only had to assert that it happened - one command with three string arguments and no content. In the first real use of this plugin that asymmetry played out exactly as the incentives predict: over three lessons the teacher issued twenty-five assessment items, said almost nothing else, and the learner eventually wrote that concepts were being tested that had never been explained. Every gate was green throughout, because nothing measured the half that went missing. This file is the missing half.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "exposition_id",
+    "course_id",
+    "concept_id",
+    "delivered_at",
+    "register",
+    "rungs",
+    "boundary"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1
+    },
+    "exposition_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "course_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "lesson_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "concept_id": {
+      "type": "string",
+      "description": "Must exist in the global concept registry and in this course's curriculum."
+    },
+    "delivered_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When it was actually said. Every review interval is measured from here, so a lesson on Monday practised on Friday must not baseline itself to Friday."
+    },
+    "register": {
+      "$shared": "register",
+      "description": "Which register this was pitched at. Recorded rather than assumed, so that an explanation that did not land can be examined against the register it was written for."
+    },
+    "rungs": {
+      "type": "array",
+      "minItems": 1,
+      "description": "The explanation ladder, as far up it as this exposition went: 1 phenomenon, 2 intuitive picture, 3 minimal model, 4 formal statement, 5 boundary. Where to start depends on the register and skipping upward is usually right, so there is no required rung here except that the boundary is its own required field. What each rung holds is the substance delivered, not a description of it.",
+      "items": {
+        "type": "object",
+        "required": [
+          "rung",
+          "said"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "rung": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "said": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What was delivered, in the words the learner saw. Not a summary and not a plan. This is the field the checks read, on the same principle that a pass must quote the learner's answer: an explanation nobody can point at did not happen."
+          }
+        }
+      }
+    },
+    "terms": {
+      "type": "array",
+      "description": "Every term introduced here, with a definition the learner can act on. Not a dictionary gloss - a one-line answer to how they would compute or check it.",
+      "items": {
+        "type": "object",
+        "required": [
+          "term",
+          "operational_definition"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "term": {
+            "type": "string",
+            "minLength": 1
+          },
+          "operational_definition": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "analogies": {
+      "type": "array",
+      "description": "Any analogy used, cashed out and bounded in the same breath. An uncashed analogy produces a feeling of understanding without the thing itself, which is the exact illusion this system is built to resist, so an analogy without both fields is refused rather than recorded.",
+      "items": {
+        "type": "object",
+        "required": [
+          "mapping",
+          "stops_where"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "mapping": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What in the analogy stands for what in the real thing."
+          },
+          "stops_where": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Where the analogy stops being true."
+          }
+        }
+      }
+    },
+    "boundary": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Rung 5, required in every register: where this concept fails, and what it is most often confused with. A concept handed over without its boundary gets misapplied, and the transfer test finds that out later at much higher cost."
+    },
+    "led_by": {
+      "enum": [
+        "exposition_first",
+        "after_failed_attempt"
+      ],
+      "description": "exposition_first: explained, then practised. after_failed_attempt: the learner was given something untaught, it failed, and this explanation went into the gap that opened. The second is often the better order for a conceptual target, which is why an untaught concept may be probed. What it must never become is a reason never to arrive at the explanation."
+    },
+    "opened_by_attempt": {
+      "type": "string",
+      "description": "When led_by is after_failed_attempt, the attempt_id of the probe that opened the gap."
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Material this explanation drew on, by source id or citation."
+    }
+  }
+}

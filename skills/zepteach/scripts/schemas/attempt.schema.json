@@ -161,6 +161,24 @@
         "$shared": "transfer_dimension"
       },
       "description": "Copied from the item. Without it, a recorded transfer pass is an unfalsifiable claim about what the learner can now do."
+    },
+    "answer": {
+      "type": "string",
+      "description": "What the learner actually submitted, kept verbatim. Stored because for a while it was not: the answer lived in the conversation, the verdict lived on disk, and the two could not be checked against each other afterwards. A learner reading their own records could see that something was marked wrong without being able to see what they wrote."
+    },
+    "response_values": {
+      "type": "object",
+      "description": "The same answer as data, keyed by the item's response field ids (or option ids for a choice). Present whenever the item named its slots. This is what makes an answer comparable to the next attempt at the same item instead of being a paragraph somebody has to read.",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "slips": {
+      "type": "array",
+      "description": "Points where the answer went wrong in execution rather than in understanding - an arithmetic error, a transcription error, a sign dropped - which the learner's reasoning elsewhere in the same answer shows they can do correctly. Recorded separately from failure_points because merging the two is a real failure this system produced: three consecutive retests of one concept the learner understood, driven by a slip each time, ending with them writing that the concepts were clear and the mistakes were arithmetic.",
+      "items": {
+        "type": "string"
+      }
     }
   }
 }

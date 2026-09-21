@@ -171,9 +171,18 @@ class TestCli:
         assert "UNPROVEN" in capsys.readouterr().out
 
     def _teach(self, root, lesson="l1", course="linear-algebra",
-               at="2026-09-01T09:00:00+00:00"):
+               at="2026-09-01T09:00:00+00:00", concept=None):
+        """Teaching now costs what marking costs: something on the record.
+
+        It used to be three strings and a call. That made claiming to have
+        taught free in a system where claiming a pass costs a quote from the
+        answer, and the first real use went exactly where that asymmetry
+        pointed.
+        """
+        doc = fx.exposition(concept or fx.EIGENVALUE, lesson_id=lesson,
+                            delivered_at=at)
         return self.run(root, ["teach", "--course", course,
-                               "--lesson", lesson, "--at", at])
+                               "--data", json.dumps(doc)])
 
     def test_teaching_is_recorded_as_its_own_event(self, root, capsys):
         assert self._teach(root) == zs.EXIT_OK
@@ -250,7 +259,11 @@ class TestCli:
         assert ln.load_mastery(root)[0]["state"] == "consolidating"
 
     def test_evidence_from_a_second_course_lands_on_the_same_concept(self, root):
-        self._teach(root)
+        # explained once, in the course that introduced it. The other course
+        # does not have to explain it again: the concept belongs to the
+        # learner, not to a course, which is the same reason the evidence
+        # from both courses lands on one row.
+        self._teach(root, concept=fx.SHARED)
         self.run(root, ["record", "--course", "linear-algebra",
                         "--data", json.dumps(
                             fx.attempt(concept_ids=[fx.SHARED]))])

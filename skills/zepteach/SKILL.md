@@ -82,8 +82,15 @@ count.
 - `mastered` needs a delayed retest **and** a transfer test, days apart.
   In-session success reaches `practiced` and stops.
 - On a retest, needing a hint is not a pass.
-- Teaching is a recorded event (`learner.py teach`) and every interval is
-  measured from it. Recording an attempt for an untaught concept is refused.
+- Teaching is recorded with what was said (`learner.py teach --file
+  <exposition.json>`), the way a pass is recorded with a quote from the
+  answer. An attempt on a concept nothing has explained is refused; a probe
+  is the exception, so that handing someone something untaught still works.
+  The explanation has to exist somewhere other than inside the questions.
+- Every item says how it is answered (`response.mode`): typed, chosen,
+  filled in, a number, or a file. An item that does not say cannot be issued,
+  and an item that needs typed notation from someone who said they would
+  photograph it is refused.
 - A concept may not be taken deeper than its `depth_target`.
 - An exercise without a grading spec may not be issued.
 - An anchored-tier item must cite its external source and source type.

@@ -35,10 +35,16 @@ class TestProductiveFailureIsActuallyRunnable:
     refuses attempts on untaught concepts. The whole mode was dead."""
 
     def _teach(self, root, concepts="linalg.eigenvalue"):
-        return ln.main(["--root", str(root), "teach", "--course",
-                        "linear-algebra", "--lesson", "l1",
-                        "--concepts", concepts,
-                        "--at", "2026-09-01T09:00:00+00:00"])
+        last = zs.EXIT_OK
+        for cid in concepts.split(","):
+            last = ln.main([
+                "--root", str(root), "teach", "--course", "linear-algebra",
+                "--data", json.dumps(fx.exposition(
+                    cid, lesson_id="l1",
+                    delivered_at="2026-09-01T09:00:00+00:00"))])
+            if last != zs.EXIT_OK:
+                return last
+        return last
 
     def test_the_failed_first_attempt_can_be_recorded(self, root):
         self._teach(root)
@@ -60,10 +66,20 @@ class TestProductiveFailureIsActuallyRunnable:
                  "--data", json.dumps(pf)])
         assert ln.load_mastery(root)[0]["state"] == "introduced"
 
-    def test_the_doctrine_says_to_record_teaching_first(self):
+    def test_the_doctrine_puts_the_explanation_after_the_failed_attempt(self):
+        """The order this mode needs, now that recording teaching means
+        recording what was said.
+
+        The first attempt goes in as a probe, which is the one kind allowed
+        on a concept nothing has explained yet. The explanation comes after
+        and points at where the attempt broke. Finding 1 was that the mode
+        was unrunnable; the fix then was to teach first, which worked and
+        also made the explanation optional, because `teach` took no content.
+        """
         s = ref("mode-router.md")
-        assert "Run `learner.py teach` first" in s
-        assert "the lesson on this concept has begun" in s
+        assert "`kind: probe`" in s
+        assert "after_failed_attempt" in s
+        assert "Step 6 is the one that goes missing" in s
 
     def test_the_precondition_is_reachable_through_a_probe(self):
         """Finding 4: requiring prerequisites at consolidating made the mode
@@ -113,18 +129,22 @@ class TestExplainBackIsRecordable:
         assert any(f.code == "ATT006" for f in zs.rule_attempt(a, "x"))
 
     def test_it_reaches_practiced_through_the_normal_path(self, root):
-        ln.main(["--root", str(root), "teach", "--course", "linear-algebra",
-                 "--lesson", "l1", "--concepts", "linalg.eigenvalue",
-                 "--at", "2026-09-01T09:00:00+00:00"])
+        ln.main(["--root", str(root), "teach", "--course",
+                        "linear-algebra", "--data",
+                        json.dumps(fx.exposition(
+                            "linalg.eigenvalue", lesson_id="l1",
+                            delivered_at="2026-09-01T09:00:00+00:00"))])
         assert ln.main(["--root", str(root), "record", "--course",
                         "linear-algebra",
                         "--data", json.dumps(self._eb())]) == zs.EXIT_OK
         assert ln.load_mastery(root)[0]["state"] == "practiced"
 
     def test_the_stable_id_makes_reuse_as_a_retest_detectable(self, root):
-        ln.main(["--root", str(root), "teach", "--course", "linear-algebra",
-                 "--lesson", "l1", "--concepts", "linalg.eigenvalue",
-                 "--at", "2026-09-01T09:00:00+00:00"])
+        ln.main(["--root", str(root), "teach", "--course",
+                        "linear-algebra", "--data",
+                        json.dumps(fx.exposition(
+                            "linalg.eigenvalue", lesson_id="l1",
+                            delivered_at="2026-09-01T09:00:00+00:00"))])
         ln.main(["--root", str(root), "record", "--course", "linear-algebra",
                  "--data", json.dumps(self._eb())])
         ln.main(["--root", str(root), "record", "--course", "linear-algebra",
@@ -148,9 +168,11 @@ class TestTheSchedulingInputsAreAskedFor:
         assert "ATT007" in [f.code for f in zs.rule_attempt(fx.attempt(), "x")]
 
     def test_neither_blocks_the_write(self, root):
-        ln.main(["--root", str(root), "teach", "--course", "linear-algebra",
-                 "--lesson", "l1", "--concepts", "linalg.eigenvalue",
-                 "--at", "2026-09-01T09:00:00+00:00"])
+        ln.main(["--root", str(root), "teach", "--course",
+                        "linear-algebra", "--data",
+                        json.dumps(fx.exposition(
+                            "linalg.eigenvalue", lesson_id="l1",
+                            delivered_at="2026-09-01T09:00:00+00:00"))])
         a = fx.attempt()
         a.pop("latency_rating")
         a.pop("latency_source")
@@ -197,6 +219,7 @@ class TestInterleavingIsCheckable:
         item = {"schema_version": 1, "exercise_id": "i1",
                 "course_id": "linalg", "concept_ids": ["linalg.eigenvalue"],
                 "tier": "variant", "prompt": "solve", "interleaved": True,
+                "response": {"mode": "free_text"},
                 "grader": {"type": "numeric"}}
         assert "EXE005" in [f.code for f in zs.rule_exercise(item, "x")]
 
@@ -242,12 +265,18 @@ class TestTheProtocolDrivesTheMechanisms:
     """Findings 9, 10 and 12: nothing said to scope the teaching event, to
     call `turn` at all, or what to do when the backlog forbids new material."""
 
-    def test_teaching_is_scoped_to_the_new_concept_cap(self):
-        s = ref("session-protocol.md")
-        assert "--concepts" in s
-        assert "match the new-concept cap" in s
+    def test_teaching_cannot_be_claimed_for_a_whole_lesson_at_once(self, root):
+        """What used to be a scoping convention is now the only option.
 
-    def test_teach_without_concepts_really_does_mark_everything(self, root):
+        `teach` once took a lesson and marked every concept in it, which made
+        "I taught six things" a single call with no content in it. Finding 9
+        was that nothing told the protocol to scope that call. Scoping it was
+        never the real answer: the call was free either way, so whichever
+        number it wrote down was equally unsupported. It now takes one
+        explanation for one concept, and the second concept in the lesson
+        stays unseen until something is recorded as having been said about
+        it.
+        """
         cur = fx.curriculum()
         cur["modules"][0]["lessons"][0]["concepts"] = [
             {"concept_id": "linalg.eigenvalue", "title": "E",
@@ -258,27 +287,12 @@ class TestTheProtocolDrivesTheMechanisms:
         zs.atomic_write_json(
             root / "courses" / "linear-algebra" / "curriculum.json", cur)
         ln.main(["--root", str(root), "teach", "--course", "linear-algebra",
-                 "--lesson", "l1", "--at", "2026-09-01T09:00:00+00:00"])
-        introduced = [r for r in ln.load_mastery(root)
+                 "--data", json.dumps(fx.exposition(
+                     "linalg.eigenvalue", lesson_id="l1",
+                     delivered_at="2026-09-01T09:00:00+00:00"))])
+        introduced = [r["concept_id"] for r in ln.load_mastery(root)
                       if r["state"] == "introduced"]
-        assert len(introduced) == 2  # which is why the doctrine scopes it
-
-    def test_scoping_it_marks_only_the_one(self, root):
-        cur = fx.curriculum()
-        cur["modules"][0]["lessons"][0]["concepts"] = [
-            {"concept_id": "linalg.eigenvalue", "title": "E",
-             "depth_target": 3},
-            {"concept_id": "linalg.eigenvector", "title": "V",
-             "depth_target": 3},
-        ]
-        zs.atomic_write_json(
-            root / "courses" / "linear-algebra" / "curriculum.json", cur)
-        ln.main(["--root", str(root), "teach", "--course", "linear-algebra",
-                 "--lesson", "l1", "--concepts", "linalg.eigenvalue",
-                 "--at", "2026-09-01T09:00:00+00:00"])
-        introduced = [r for r in ln.load_mastery(root)
-                      if r["state"] == "introduced"]
-        assert len(introduced) == 1
+        assert introduced == ["linalg.eigenvalue"]
 
     def test_the_turn_cadence_is_stated_in_both_places(self):
         for f in ("session-protocol.md", "context-budget.md"):

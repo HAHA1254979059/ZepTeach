@@ -9,7 +9,8 @@
     "course_id",
     "concept_ids",
     "prompt",
-    "grader"
+    "grader",
+    "response"
   ],
   "additionalProperties": false,
   "properties": {
@@ -166,6 +167,83 @@
     "reveals_method": {
       "type": "boolean",
       "description": "True when the wording tells the learner which method or concept to use. Harmless in a single-topic set and fatal in a mixed one: choosing the method is the thing a mixed set practises, so revealing it turns the item back into single-topic practice while still looking mixed."
+    },
+    "response": {
+      "type": "object",
+      "description": "How the learner supplies the answer. Separate from `form`, which is what their mind is doing, because the same cognitive work can be answered by typing a derivation, by choosing between three candidate derivations, or by filling the two steps that carry the point - identical evidence, very different amounts of typing. This block is required, and it is required for one specific reason: when it did not exist, the shape of the answer was decided in the moment by whoever was teaching. That produced a good interactive form for twenty minutes and then quietly reverted to a wall of prose, because nothing on disk remembered the decision and nothing could refuse an item that ignored it.",
+      "required": [
+        "mode"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "$shared": "response_mode"
+        },
+        "fields": {
+          "type": "array",
+          "description": "The named slots the answer is made of, for fill_blanks and for a multi-part numeric or free_text item. Naming them is what lets the answer be stored as data rather than as a paragraph somebody has to read back later, and it is why a learner can answer part 3 without retyping parts 1 and 2.",
+          "items": {
+            "type": "object",
+            "required": [
+              "field_id",
+              "label"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "field_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1
+              },
+              "hint": {
+                "type": "string"
+              },
+              "expects_notation": {
+                "type": "boolean",
+                "description": "True when answering this slot means writing something ordinary prose typing handles badly."
+              }
+            }
+          }
+        },
+        "options": {
+          "type": "array",
+          "minItems": 2,
+          "description": "For mode choice. At least two, and the wrong ones have to be things someone could actually believe: options nobody would pick turn a choice item into a free pass while looking like an assessment.",
+          "items": {
+            "type": "object",
+            "required": [
+              "option_id",
+              "text"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "option_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1
+              },
+              "why_wrong": {
+                "type": "string",
+                "description": "For a distractor: the mistaken belief that leads here. Written when the item is written, so that choosing it can be answered with the misconception rather than with a repetition of the right answer."
+              }
+            }
+          }
+        },
+        "expects_notation": {
+          "type": "boolean",
+          "description": "True when answering this item at all requires notation - a formula, a structure, a diagram, a table, non-Latin script. Checked against how this learner said they can supply notation."
+        },
+        "why": {
+          "type": "string",
+          "description": "Why this mode for this item. One line."
+        }
+      }
     }
   }
 }

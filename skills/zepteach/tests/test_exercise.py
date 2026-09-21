@@ -36,6 +36,7 @@ def item(**over):
         "tier": "variant",
         "prompt": "a question",
         "grader": {"type": "numeric", "tolerance": 0.01},
+        "response": {"mode": "free_text"},
     }
     doc.update(over)
     return doc

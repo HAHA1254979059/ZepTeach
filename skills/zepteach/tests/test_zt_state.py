@@ -128,6 +128,7 @@ def valid_exercise(**over):
         "anchor_kind": "textbook",
         "source_ref": "Strang 6.1, problem 14, p.288",
         "grader": {"type": "numeric", "tolerance": 1e-6},
+        "response": {"mode": "free_text"},
     }
     doc.update(over)
     return doc

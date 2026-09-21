@@ -41,5 +41,33 @@
       "modality"
     ],
     "description": "Which way a transfer test moves away from the setting the material was learned in. Barnett and Ceci's six context dimensions, used here because 'test it in a new context' is not a specification and cannot be checked. knowledge_domain: a different subject or sub-field. physical_context: a different place or medium of work. temporal_context: after a long enough gap that the learning episode is no longer being recalled as an episode. functional_context: academic exercise versus a real situation with real stakes. social_context: alone versus explaining to or arguing with someone. modality: a different form, such as reading it versus saying it versus drawing it."
+  },
+  "register": {
+    "enum": [
+      "terse_technical",
+      "technical_with_gloss",
+      "analogy_first"
+    ],
+    "description": "How much scaffolding an explanation carries, PER DOMAIN. terse_technical: jargon straight, no analogy, start at the formal statement. technical_with_gloss: jargon plus a one-line operational definition. analogy_first: intuition before formalism. The same person is one of these in one field and another in a different field, and instruction that helps a novice actively harms an expert, so there is no global setting."
+  },
+  "response_mode": {
+    "enum": [
+      "free_text",
+      "choice",
+      "fill_blanks",
+      "numeric",
+      "upload"
+    ],
+    "description": "How the learner physically supplies the answer. Separate from cognitive_action, which is what their mind is doing: deriving a result is one cognitive action and can be answered by typing it, by choosing between three candidate derivations, or by filling the two steps that matter, and those are very different amounts of work for the same evidence. free_text: they write it. choice: they pick from options the item lists. fill_blanks: they fill named slots. numeric: a single value. upload: they supply a file or a photograph of work done on paper. An item with no response mode may not be issued, because then the shape of the answer is decided in the moment and is forgotten by the next item."
+  },
+  "notation_channel": {
+    "enum": [
+      "types_plain",
+      "types_markup",
+      "photographs",
+      "picks_from_options",
+      "dictates"
+    ],
+    "description": "How THIS learner can supply notation - anything that ordinary prose typing handles badly, such as formulas, structures, diagrams, tables or non-Latin script. Recorded once, because asking every time is the friction it exists to remove. types_plain: they will type it as best they can in plain text. types_markup: they will type it in a markup language such as LaTeX. photographs: they will do it on paper and send an image. picks_from_options: typing it is expensive enough that items needing notation should offer candidates instead. dictates: they will say it in words. A learner usually has several."
   }
 }

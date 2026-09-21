@@ -180,7 +180,8 @@ class TestCli:
                     "--data", json.dumps(full_answers())]) == zs.EXIT_OK
         left = intake.remaining(tmp_path)
         assert [q["id"] for q in left if q["required"]] == []
-        assert [q["id"] for q in left] == ["constraints"]
+        assert [q["id"] for q in left] == ["notation_input",
+                                           "constraints"]
 
     def test_the_written_root_passes_a_full_check(self, tmp_path):
         zs.main(["--root", str(tmp_path), "init"])

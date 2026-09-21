@@ -15,6 +15,7 @@ causal claim about the past, and the second course should benefit from the
 first having taught it.
 """
 
+import json
 import sys
 from pathlib import Path
 
@@ -331,6 +332,51 @@ def mastery(concept_id=EIGENVALUE, state="introduced", courses=("linalg",),
     }
     doc.update(over)
     return doc
+
+
+def exposition(concept_id=EIGENVALUE, course_id="linalg", **over):
+    """One concept actually being explained.
+
+    Every test that records an attempt now needs one of these, which is the
+    point: before this existed, a test could drive a concept from unseen to
+    mastered without anything ever claiming to have taught it, and so could
+    the real system.
+    """
+    doc = {
+        "schema_version": 1,
+        "exposition_id": "x1",
+        "course_id": course_id,
+        "lesson_id": "l1",
+        "concept_id": concept_id,
+        "delivered_at": "2026-09-01T09:00:00+00:00",
+        "register": "technical_with_gloss",
+        "rungs": [
+            {"rung": 3,
+             "said": "Take the smallest case with the feature in it and "
+                     "work it through by hand before generalising."},
+            {"rung": 4,
+             "said": "The formal statement, written out, with each symbol "
+                     "named as it first appears."},
+        ],
+        "terms": [{"term": "the term under discussion",
+                   "operational_definition": "how you would compute or "
+                                             "check it, in one line"}],
+        "boundary": "Where this stops holding, and the neighbouring idea it "
+                    "is most often confused with.",
+        "led_by": "exposition_first",
+    }
+    doc.update(over)
+    return doc
+
+
+def teach(root_path, concept_id=EIGENVALUE, course="linear-algebra",
+          course_id="linalg", **over):
+    """Record an explanation the way the system requires, from a test."""
+    sys.path.insert(0, str(SCRIPTS))
+    import learner as ln
+    doc = exposition(concept_id, course_id, **over)
+    return ln.main(["--root", str(root_path), "teach", "--course", course,
+                    "--data", json.dumps(doc)])
 
 
 def attempt(**over):

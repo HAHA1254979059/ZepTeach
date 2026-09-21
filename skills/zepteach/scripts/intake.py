@@ -142,11 +142,35 @@ QUESTIONS = [
         "required": False,
     },
     {
+        "id": "notation_input",
+        "ask": "When an answer needs something awkward to type - a formula, "
+               "a structure, a diagram, a table - how do you want to give "
+               "it? Typing it out, writing it in a markup language, "
+               "photographing it off paper, or picking between candidates "
+               "I offer. More than one is fine.",
+        "why": "Because the alternative is finding out in the middle of a "
+               "lesson. This learner told us mid-lesson that typing "
+               "formulas was painful and that the item could have been "
+               "multiple choice, which was true and arrived too late. It is "
+               "asked as a channel rather than as a free-text preference so "
+               "that an item can actually be refused for ignoring it: "
+               "`formulas must be LaTeX` written as prose reads clearly and "
+               "gates nothing.",
+        "say": "This changes how they answer, never what counts as "
+               "answering. A question that is easier to submit is not an "
+               "easier question.",
+        "stores": "profile.notation_input",
+        "required": False,
+    },
+    {
         "id": "constraints",
-        "ask": "Anything that should always hold? Formulas written a "
-               "particular way, no video, anything like that.",
+        "ask": "Anything else that should always hold? No video, a "
+               "particular convention, anything like that.",
         "why": "Standing preferences are cheap to record once and annoying "
-               "to restate every session.",
+               "to restate every session. Note that anything here is prose "
+               "and cannot be enforced - if a preference needs to be "
+               "honoured rather than remembered, it needs a field of its "
+               "own, the way the notation channel does.",
         "stores": "profile.constraints",
         "required": False,
     },
@@ -209,6 +233,7 @@ def known(root: Path) -> dict:
                            ("background", "background"),
                            ("pacing", "pacing"),
                            ("source_languages", "source_languages"),
+                           ("notation_input", "notation_input"),
                            ("constraints", "constraints")):
             if prof.get(field):
                 out["answered"][key] = prof[field]
@@ -287,7 +312,7 @@ def build(answers: dict, learner_id: str = "learner") -> tuple:
     if answers.get("background"):
         profile["background"] = [_as_background(b)
                                  for b in answers["background"]]
-    for key in ("source_languages", "constraints"):
+    for key in ("source_languages", "notation_input", "constraints"):
         if answers.get(key):
             profile[key] = answers[key]
 

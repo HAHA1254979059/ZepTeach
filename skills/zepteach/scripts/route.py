@@ -64,7 +64,9 @@ ROUTES = {
                  "mode-router.md", "session-protocol.md"],
         "run": ["session.py open --course <slug> --energy <level>",
                 "learner.py probe --course <slug> --lesson <id>",
-                "curriculum.py lesson --course <slug> --lesson <id>"],
+                "curriculum.py lesson --course <slug> --lesson <id>",
+                "teaching.py ladder",
+                "learner.py teach --course <slug> --file <exposition.json>"],
         "conditional": {"source_anchored": ["source-anchoring.md"],
                         "adapter": True},
         "then": {"review": "session protocol step 3 clears due reviews; "

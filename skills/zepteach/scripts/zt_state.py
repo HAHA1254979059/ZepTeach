@@ -850,6 +850,14 @@ COURSE_FILES = {
 
 COURSE_JSONL = {
     "attempts.jsonl": "attempt",
+    # What the learner produced, and what the teacher delivered. Both, and
+    # in the same shape, because for a long time only the first existed and
+    # the system quietly became one that only tested.
+    "expositions.jsonl": "exposition",
+    # The questions themselves. They used to live only in the conversation,
+    # which is why nothing could check an explanation against the questions
+    # it was meant to be separate from.
+    "exercises.jsonl": "exercise",
 }
 
 
