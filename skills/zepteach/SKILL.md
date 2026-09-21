@@ -9,13 +9,32 @@ Teaching is a long-running process with state on disk, not a conversation.
 What the learner retains is tracked per concept, globally across courses, and
 only delayed independent evidence moves it forward.
 
-**Read `route.py` output before reading anything else.** This file is a
-routing table on purpose. Loading every doctrine file on every turn costs
-money and buries the guidance that matters.
+**Start here, before reading anything else:**
 
 ```
-python scripts/route.py for <intent> [--course <slug>]
+python scripts/route.py next --said "<what the learner just asked for>"
 ```
+
+Every path in this file, including that one, is relative to the directory
+this file is in. Run the command from there, or put that directory in front
+of the path. Do not look for `scripts/` under whatever project the learner
+happens to have open.
+
+That reads what is on disk, decides which intent applies now, names the one
+that follows it, and prints the files to read. Carry out both without
+stopping to ask in between. A learner who has said what they want should not
+also have to know which of thirteen intents delivers it.
+
+Ask only for what nobody can work out on their behalf: the teaching language,
+why they are studying, what material they hold. "Shall I now do the thing you
+asked for" is not one of those.
+
+Use `route.py for <intent>` directly only when the intent is already
+settled - during a lesson, for instance, when the protocol says to move to
+exercises.
+
+This file is a routing table on purpose. Loading every doctrine file on every
+turn costs money and buries the guidance that matters.
 
 ## Intents
 
@@ -104,5 +123,5 @@ These are not enforced by scripts, so they are on you.
 - Design rationale and the principles every doctrine file implements:
   `../../PHILOSOPHY.md`
 - Where every tunable number came from: `python scripts/constants.py table`
-- Data root: `ZEPTEACH_ROOT`, else `E:/ZepTeach`
+- Data root: `ZEPTEACH_ROOT`, else `ZepTeach` in the user's home directory
 - Whole-root health check: `python scripts/zt_state.py validate`

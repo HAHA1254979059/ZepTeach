@@ -118,7 +118,7 @@ It prints nothing when there is nothing to say.
 python -m pytest skills/zepteach/tests -q
 ```
 
-792 tests, no dependencies beyond pytest itself. They are worth reading:
+798 tests, no dependencies beyond pytest itself. They are worth reading:
 most of them state, in the test name and docstring, a specific way this could
 go wrong while still producing output that reads perfectly well.
 
@@ -165,6 +165,6 @@ One consequence worth knowing: a link exposes the whole folder, including
 development link and would not be for a distribution. The fixture courses
 inside are scaffolding, not material for anyone to learn from.
 
-The learner's data still goes wherever `ZEPTEACH_ROOT` points, or to
-`E:\ZepTeach` on Windows and `~/ZepTeach` elsewhere by default. It is never
-inside the repository.
+The learner's data still goes wherever `ZEPTEACH_ROOT` points, or to a
+`ZepTeach` directory in the current user's home directory by default. It is
+never inside the repository.

@@ -47,11 +47,17 @@ EXIT_NOT_FOUND = 5
 # --------------------------------------------------------------------------
 
 def default_root() -> Path:
+    """Where a learner's records live, on any machine.
+
+    The home directory on every platform. An earlier version returned a
+    fixed drive letter on Windows because that is where the author keeps
+    this data, which meant the plugin created, or failed to create, a
+    directory on a drive most people do not have. Set ZEPTEACH_ROOT to put
+    it somewhere else.
+    """
     env = os.environ.get("ZEPTEACH_ROOT")
     if env:
         return Path(env)
-    if sys.platform.startswith("win"):
-        return Path("E:/ZepTeach")
     return Path.home() / "ZepTeach"
 
 
@@ -1244,7 +1250,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="zt_state.py",
         description="ZepTeach state engine: schemas, invariants, gates.")
     p.add_argument("--root", help="data root (default: ZEPTEACH_ROOT env, "
-                                  "else E:/ZepTeach on Windows)")
+                                  "else ZepTeach in your home directory)")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("root").set_defaults(func=cmd_root)

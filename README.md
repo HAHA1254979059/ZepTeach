@@ -189,7 +189,8 @@ document for you.
 export ZEPTEACH_ROOT=~/zepteach-data
 ```
 
-Defaults to `E:\ZepTeach` on Windows and `~/ZepTeach` elsewhere.
+Defaults to a `ZepTeach` directory in your home directory: `~/ZepTeach`,
+or `C:\Users\<you>\ZepTeach` on Windows.
 
 Nothing is sent anywhere. Nothing is installed. No directory you did not
 permit is touched, reads included.
@@ -217,7 +218,7 @@ which numbers are guesses and which are not.
 python -m pytest skills/zepteach/tests -q
 ```
 
-792 tests, run on Linux, macOS and Windows against Python 3.10 and 3.13. Many
+798 tests, run on Linux, macOS and Windows against Python 3.10 and 3.13. Many
 are worth reading on their own: each states, in its name and docstring, a
 specific way this could go wrong while still producing output that reads
 perfectly well.

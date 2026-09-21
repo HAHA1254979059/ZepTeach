@@ -1,6 +1,7 @@
 """The plugin must not know what you are studying, and must not carry a syllabus.
 
-Two failures this file exists to prevent, both of which already happened once.
+Three failures this file exists to prevent, each of which already happened
+once.
 
 The first is discipline leak. The core once had a grader enum naming two
 specific chemistry programs, an exercise-form list mixing simulations with
@@ -9,7 +10,11 @@ of it was deliberate: every example reached for while writing came from the
 same field, and examples harden into assumptions. Review does not catch this,
 because the leak reads perfectly naturally to whoever wrote it.
 
-The second is shipped content. Fixture courses are scaffolding for testing
+The second is a path from one particular computer, which has the same
+shape: the default data root was a drive letter that exists on the author's
+machine and almost nowhere else.
+
+The third is shipped content. Fixture courses are scaffolding for testing
 this plugin. A plugin that claims to know no subject must not ship with a
 mathematics course inside it. See PACKAGING.md.
 """
@@ -220,3 +225,66 @@ class TestTheFixtureWorldStaysMixed:
         entry = [c for c in fx.registry()["concepts"]
                  if c["concept_id"] == fx.SHARED][0]
         assert sorted(entry["courses"]) == ["hist", "linalg"]
+
+
+class TestNoMachineSpecificPaths:
+    """The plugin must not assume anything about the machine it runs on.
+
+    This is the same mistake as the discipline leak, in a different place.
+    `default_root()` returned `E:/ZepTeach` on Windows for months, because
+    that is the drive the author keeps this data on. It reads perfectly
+    naturally to whoever wrote it, every test passed, and the first person
+    to install it from GitHub had no E: drive. Examples harden into
+    assumptions; so do defaults.
+
+    The discipline scan did not catch it, because that scan looks for
+    subject names. A path is not a subject name.
+    """
+
+    # A drive letter followed by a separator, or a home directory with a
+    # user name in it. These are absolute paths that exist on one machine.
+    MACHINE_PATH = re.compile(
+        r"(?:^|[^A-Za-z0-9])([A-Za-z]:[\/]|/home/[A-Za-z0-9_]+|"
+        r"/Users/[A-Za-z0-9_]+)")
+
+    # Lines where such a path is standing in for one the reader supplies,
+    # or is a fabricated example being discussed rather than used. Each of
+    # these has to be a shape a reader cannot mistake for a real location.
+    PLACEHOLDER = re.compile(
+        r"path[\/]to"          # C:\path\to\ZepTeach
+        r"|<you>|<user>|<name>"  # C:\Users\<you>\ZepTeach
+        r"|%USERPROFILE%"        # Windows' own name for the home directory
+        r"|/home/u/",            # the worked example of the prefix trap
+        re.IGNORECASE)
+
+    def test_no_shipped_file_names_a_path_from_one_particular_computer(self):
+        offences = []
+        for path in shipped_files():
+            text = path.read_text(encoding="utf-8", errors="replace")
+            for i, line in enumerate(text.splitlines(), 1):
+                if not self.MACHINE_PATH.search(line):
+                    continue
+                if self.PLACEHOLDER.search(line):
+                    continue
+                offences.append(
+                    path.relative_to(PLUGIN).as_posix() + ":" + str(i) +
+                    "  |  " + line.strip()[:90])
+        assert offences == [], (
+            "a path from one particular computer got into the shipped "
+            "plugin. Nobody else has it:\n" + "\n".join(offences))
+
+    def test_the_data_root_default_is_under_the_home_directory(self):
+        import sys
+        sys.path.insert(0, str(SCRIPTS))
+        import zt_state as zs
+        import os
+        saved = os.environ.pop("ZEPTEACH_ROOT", None)
+        try:
+            root = zs.default_root()
+        finally:
+            if saved is not None:
+                os.environ["ZEPTEACH_ROOT"] = saved
+        assert root == Path.home() / "ZepTeach"
+        # and it must not depend on which operating system is running,
+        # which is what made the old version survive review
+        assert str(root).startswith(str(Path.home()))

@@ -152,6 +152,129 @@ ROUTES = {
 }
 
 
+def state_of(root: Path) -> dict:
+    """What exists on disk right now.
+
+    Separate from deciding what to do, because the decision is a judgement
+    and this is not. Kept apart so the judgement can be read and argued with
+    rather than being buried in filesystem checks.
+    """
+    cfg_path = root / "config.json"
+    cfg = zs.read_json(cfg_path) if cfg_path.exists() else {}
+    prof_path = root / "learner" / "profile.json"
+    prof = zs.read_json(prof_path) if prof_path.exists() else {}
+
+    courses = []
+    cdir = root / "courses"
+    if cdir.exists():
+        for d in sorted(cdir.iterdir()):
+            f = d / "course.json"
+            if not f.exists():
+                continue
+            c = zs.read_json(f)
+            env = c.get("environment") or {}
+            courses.append({
+                "slug": d.name,
+                "title": c.get("title"),
+                "status": c.get("status"),
+                "domain": c.get("domain"),
+                "goal": c.get("goal"),
+                "environment_done": bool(env.get("completed_at")),
+                "has_adapter": bool(c.get("adapter_ref")),
+                "updated": c.get("updated") or c.get("created") or "",
+            })
+
+    return {
+        "root": str(root),
+        "root_exists": root.exists(),
+        "setup1_done": bool(cfg.get("setup", {}).get("stage1_completed_at")
+                            and cfg.get("teaching_language")),
+        "teaching_language": cfg.get("teaching_language"),
+        "has_profile": bool(prof.get("pacing")),
+        "courses": courses,
+    }
+
+
+def next_step(root: Path, slug: str = None, said: str = None) -> dict:
+    """Which intent to run now, and what follows it.
+
+    This exists because a learner should not have to know which of nine
+    commands applies. Being handed a list and told to pick is the interface
+    equivalent of being handed a syllabus and told to study: technically
+    complete, and no help at the moment it is needed.
+
+    `said` is whatever the learner just asked for. It does not decide the
+    step - the state does that - but it changes what gets said, because
+    answering a question with an instruction to run something else reads as
+    a refusal even when it is not.
+    """
+    st = state_of(root)
+    courses = st["courses"]
+
+    if not st["setup1_done"]:
+        return {
+            "do": "setup1",
+            "why": "nothing has been settled yet: which language to teach "
+                   "in, why they are studying, where notes go",
+            "then": "course-new",
+            "say": "先把几件问不出第二次的事定下来，然后直接开课。",
+            "state": st,
+            "carry_on": True,
+        }
+
+    if not courses:
+        return {
+            "do": "course-new",
+            "why": "the learner is set up and has no course yet",
+            "then": "setup2",
+            "say": ("之前的设置还在，直接开课。" +
+                    ("要学的是：" + said if said else "")),
+            "state": st,
+            "carry_on": True,
+        }
+
+    if slug:
+        course = next((c for c in courses if c["slug"] == slug), None)
+        if course is None:
+            return {"do": "status", "why": "no such course: " + slug,
+                    "then": None, "state": st, "carry_on": False}
+    else:
+        active = [c for c in courses if c["status"] == "active"]
+        course = max(active or courses, key=lambda c: c["updated"])
+
+    if not course["has_adapter"]:
+        return {
+            "do": "course-new",
+            "why": course["slug"] + " has no adapter, so nothing knows what "
+                   "doing this subject looks like",
+            "then": "setup2",
+            "course": course["slug"],
+            "state": st,
+            "carry_on": True,
+        }
+
+    if not course["environment_done"]:
+        return {
+            "do": "setup2",
+            "why": course["slug"] + " has never been checked for what its "
+                   "practice can act on; teaching is gated on it",
+            "then": "lesson",
+            "course": course["slug"],
+            "say": "先确认这门课的练习能落在什么上，然后就能上课了。",
+            "state": st,
+            "carry_on": True,
+        }
+
+    return {
+        "do": "lesson",
+        "why": "everything is in place for " + course["slug"],
+        "then": "close",
+        "course": course["slug"],
+        "state": st,
+        "carry_on": True,
+    }
+
+
 def _course(root: Path, slug: str):
     p = root / "courses" / slug / "course.json"
     return zs.read_json(p) if p.exists() else None
@@ -262,6 +385,32 @@ def cmd_route(args) -> int:
     return zs.EXIT_OK
 
 
+def cmd_next(args) -> int:
+    """One command that decides what happens now, so the learner does not
+    have to know which of nine applies."""
+    root = Path(args.root) if args.root else zs.default_root()
+    step = next_step(root, args.course, args.said)
+
+    if args.json:
+        print(json.dumps(step, ensure_ascii=False, indent=2))
+        return zs.EXIT_OK
+
+    print("NOW  " + step["do"] + "   <- " + step["why"])
+    if step.get("say"):
+        print("     say to the learner: " + step["say"])
+    if step.get("then"):
+        print("THEN " + step["then"] +
+              ("   (continue without being asked again)"
+               if step.get("carry_on") else ""))
+    if step.get("course"):
+        print("COURSE  " + step["course"])
+
+    print("")
+    res = resolve(step["do"], root, step.get("course"))
+    print(render(res))
+    return zs.EXIT_OK
+
+
 def cmd_list(args) -> int:
     if args.json:
         print(json.dumps(
@@ -364,6 +513,13 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--course")
     sp.add_argument("--json", action="store_true")
     sp.set_defaults(func=cmd_route)
+
+    sp = sub.add_parser("next",
+                        help="what to do now, given what is on disk")
+    sp.add_argument("--course")
+    sp.add_argument("--said", help="what the learner just asked for")
+    sp.add_argument("--json", action="store_true")
+    sp.set_defaults(func=cmd_next)
 
     sp = sub.add_parser("list")
     sp.add_argument("--json", action="store_true")

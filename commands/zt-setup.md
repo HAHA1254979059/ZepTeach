@@ -11,3 +11,12 @@ particular which obvious questions must not be asked.
 Store with `intake.py write`. If it refuses, a required answer is missing.
 Go back and ask that one question rather than filling the gap with something
 plausible.
+
+## If it has already run
+
+`intake.py known` will say so. That is not a reason to stop: the learner
+asked for something, and telling them setup is already complete answers a
+question they did not ask.
+
+Ask only what they say has changed, then continue to whatever they actually
+wanted. If they named a subject, build that course now.

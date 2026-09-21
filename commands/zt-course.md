@@ -15,3 +15,8 @@ Order matters:
 5. `curriculum.py register-concepts` then `curriculum.py validate`.
 
 Then run `/zt-probe` before teaching anything.
+
+Then run `/zepteach:zt-probe` yourself. A course that has not been checked
+for what its practice can act on cannot be taught, and the check is gated in
+code, so stopping here leaves the learner one command short of anything
+happening.

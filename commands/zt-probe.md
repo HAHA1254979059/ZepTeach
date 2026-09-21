@@ -14,3 +14,7 @@ change the goal. Do not offer a third.
 
 Record what they have with `resources.py`, including how they use it.
 Then `--write`.
+
+When the check passes, start the first lesson. The learner asked to study
+something; arriving at a green light and handing back a command to type is
+where the momentum goes.
