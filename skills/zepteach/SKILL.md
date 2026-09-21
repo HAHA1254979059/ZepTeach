@@ -15,6 +15,13 @@ only delayed independent evidence moves it forward.
 python scripts/route.py next --said "<what the learner just asked for>"
 ```
 
+If it answers `upgrade`, these records were written by an older version of
+the plugin. Run `migrate.py check` to see what changed and what it costs,
+then `migrate.py apply`. It copies the whole root before touching anything.
+Nothing that was learned is lost, and nothing is invented to fill a gap: a
+concept taught before explanations were recorded is exempted by name, in a
+file, with the reason, and stays visible in the progress report.
+
 Every path in this file, including that one, is relative to the directory
 this file is in. Run the command from there, or put that directory in front
 of the path. Do not look for `scripts/` under whatever project the learner

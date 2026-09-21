@@ -218,7 +218,7 @@ which numbers are guesses and which are not.
 python -m pytest skills/zepteach/tests -q
 ```
 
-837 tests, run on Linux, macOS and Windows against Python 3.10 and 3.13. Many
+861 tests, run on Linux, macOS and Windows against Python 3.10 and 3.13. Many
 are worth reading on their own: each states, in its name and docstring, a
 specific way this could go wrong while still producing output that reads
 perfectly well.

@@ -26,6 +26,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import migrate as mg  # noqa: E402
 import zt_state as zs  # noqa: E402
 
 REF_DIR = Path(__file__).resolve().parents[1] / "references"
@@ -57,6 +58,15 @@ ROUTES = {
                 "zt_state.py gate course-env --course <slug>"],
         "conditional": {"tools": ["resources-and-tools.md"]},
         "defer": "no teaching material yet; this is about what practice will land on",
+    },
+    "upgrade": {
+        "what": "bring a data root written by an older version up to date",
+        "read": ["persona-zep.md"],
+        "run": ["migrate.py check", "migrate.py apply"],
+        "then": {"status": "then say where things stand and carry on"},
+        "defer": "nothing else loads until this is settled. An upgrade that "
+                 "runs halfway through a lesson turns into a refusal the "
+                 "learner reads as a bug",
     },
     "lesson": {
         "what": "teach",
@@ -212,6 +222,26 @@ def next_step(root: Path, slug: str = None, said: str = None) -> dict:
     """
     st = state_of(root)
     courses = st["courses"]
+
+    # Before anything else, because the alternative is a refusal in the
+    # middle of a lesson that reads like a bug. Somebody who studied for
+    # three weeks, then updated the plugin, should be told what changed and
+    # what it costs them - once, at the start - rather than discovering it
+    # when an answer will not record.
+    work = mg.outstanding(root)
+    if work:
+        return {
+            "do": "upgrade",
+            "why": "this data root was written by an earlier version of the "
+                   "plugin: " + ", ".join(w["id"] for w in work),
+            "then": "status",
+            "run": ["migrate.py check", "migrate.py apply"],
+            "say": "之前学的东西都在。插件更新过，先把记录对齐到新版本，"
+                   "告诉你哪些会受影响，再接着上课。",
+            "upgrade": work,
+            "state": st,
+            "carry_on": True,
+        }
 
     if not st["setup1_done"]:
         return {

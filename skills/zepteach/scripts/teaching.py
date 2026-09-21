@@ -198,16 +198,24 @@ def taught_before(rows, concept_id: str, when: str):
     return None
 
 
-def untaught_in(rows, concept_ids, when: str, kind: str):
+def untaught_in(rows, concept_ids, when: str, kind: str, exempt=None):
     """Which of these concepts has no explanation on file from before `when`.
 
     A probe is exempt: being asked something untaught is the point of a
     probe, and refusing it would remove the one move that opens a gap worth
     explaining into.
+
+    `exempt` holds concepts taught before this rule existed, from
+    migrate.py. They are exempt by name and by date, listed in a file and
+    reported on, rather than being given a fabricated explanation to satisfy
+    the check. A rule that arrives after the records cannot be applied to
+    them honestly, and the honest thing is to say which ones and why.
     """
     if kind == "probe":
         return []
-    return [c for c in concept_ids if taught_before(rows, c, when) is None]
+    exempt = set(exempt or ())
+    return [c for c in concept_ids
+            if c not in exempt and taught_before(rows, c, when) is None]
 
 
 def never_explained(rows, mastery_rows):

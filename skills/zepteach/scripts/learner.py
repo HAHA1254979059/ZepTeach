@@ -24,6 +24,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import migrate as mg  # noqa: E402
 import review as rv  # noqa: E402
 import teaching as tp  # noqa: E402
 import zt_state as zs  # noqa: E402
@@ -537,7 +538,8 @@ def cmd_record(args) -> int:
     untaught = tp.untaught_in(load_expositions(root),
                               att.get("concept_ids", []),
                               att.get("submitted_at") or "",
-                              att.get("kind"))
+                              att.get("kind"),
+                              exempt=mg.grandfathered(root))
     if untaught:
         print("GATE FAILED: nothing on file explains " + ", ".join(untaught) +
               " from before this answer was given. Record the explanation "

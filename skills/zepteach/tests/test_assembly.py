@@ -186,3 +186,75 @@ class TestTheSessionHook:
             capture_output=True, text=True, timeout=30)
         assert out.stdout.strip() == ""
         assert out.returncode == 0
+
+
+class TestItWorksOnAHostWithOnlyTheSkill:
+    """Codex, and anything else that loads a skill and nothing else.
+
+    This is not a nice-to-have. For most people who will use this, Codex is
+    the main tool; the slash commands, the subagents and the session hook are
+    Claude Code's and do not exist there. Codex reads `SKILL.md`, `scripts/`
+    and `references/`, which means anything a learner needs in order to get
+    started, keep going, or recover has to be reachable from inside this
+    directory.
+
+    The failure this prevents has already happened once: an entry point was
+    improved by writing a new command file, and the improvement was invisible
+    to the host it was written for.
+    """
+
+    def test_the_whole_entry_point_is_inside_the_skill(self):
+        text = (SKILL / "SKILL.md").read_text(encoding="utf-8")
+        assert "route.py next" in text, (
+            "SKILL.md is the only entry point some hosts have. If the way in "
+            "is documented anywhere else, those hosts do not have one")
+        assert "commands/" not in text
+
+    def test_no_script_reaches_outside_the_skill_directory(self):
+        """A script that reads `../../commands` or `../../agents` works here
+        and fails silently wherever the skill was linked on its own."""
+        bad = []
+        for path in sorted((SKILL / "scripts").glob("*.py")):
+            body = path.read_text(encoding="utf-8")
+            for i, line in enumerate(body.splitlines(), 1):
+                if line.lstrip().startswith("#"):
+                    continue
+                for marker in ("parents[2]", "parents[3]",
+                               '"commands"', "'commands'",
+                               '"agents"', "'agents'"):
+                    if marker in line:
+                        bad.append(path.name + ":" + str(i) + " " + marker)
+        assert bad == [], (
+            "a shipped script depends on files outside the skill: " +
+            ", ".join(bad))
+
+    def test_every_routed_intent_names_only_things_inside_the_skill(self):
+        missing = []
+        for intent in rt.ROUTES:
+            res = rt.resolve(intent)
+            missing.extend(intent + ": " + m for m in res["missing"])
+            for cmd in res.get("run", []):
+                script = cmd.split()[0]
+                if script.endswith(".py") and \
+                        not (SKILL / "scripts" / script).exists():
+                    missing.append(intent + ": " + script)
+        assert missing == []
+
+    def test_recovering_an_old_data_root_does_not_need_a_command_file(self):
+        """Someone who updates the plugin and reopens their records has to be
+        told what changed. On a host with no slash commands, the only place
+        that can come from is the router."""
+        assert "upgrade" in rt.ROUTES
+        res = rt.resolve("upgrade")
+        assert any("migrate.py" in r for r in res["run"])
+
+    def test_grading_stays_possible_without_subagents(self):
+        """The isolation that keeps marking honest is the marker not having
+        the teaching, not the mechanism that delivers it. On a host with no
+        subagents that means a package a person can carry to a fresh
+        conversation, so the package builder has to be a script."""
+        assert (SKILL / "scripts" / "grade.py").exists()
+        out = subprocess.run(
+            [sys.executable, str(SKILL / "scripts" / "grade.py"), "--help"],
+            capture_output=True, text=True)
+        assert "package" in out.stdout
