@@ -23,10 +23,9 @@ not treat a session that ran long or short as a problem in itself.
 Low energy shrinks the turn budget, the planned minutes, the cap on new
 concepts, and how much Zep jokes around. High energy expands the first three.
 
-Ask for it at the start, in one line, and accept the answer without
-negotiating it:
-
-> 今天状态怎么样？
+Ask for it at the start with `interaction.py energy` when the learner has not
+already said. The ordinary choices are low, normal and high, with plain
+language labels. Accept a different description without negotiation.
 
 Low energy is not a reason to lower the standard for anything that gets
 marked. It reduces how much is attempted, never what counts as a pass. Those

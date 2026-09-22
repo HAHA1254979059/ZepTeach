@@ -13,8 +13,10 @@ behind it; a non-zero exit is an instruction, not a warning.
 session.py open --course <slug> --energy <low|normal|high> [--minutes N]
 ```
 
-Ask for energy if the learner did not say. One question, no preamble:
-今天状态怎么样？
+Ask for energy if the learner did not say. Use `interaction.py energy` and
+show the inline choices when the host supports them. The learner may also
+describe their condition in their own words. Do not ask again when they have
+already said it.
 
 Exit 3 means the course never had its environment setup run. Do not teach;
 run setup stage 2 first.
@@ -52,7 +54,8 @@ learner.py probe --course <slug> --lesson <id>
 
 - Exit 3: a prerequisite is shaky and held. Repair it, or have the learner
   explicitly say to carry on and record that with `learner.py bypass`.
-- `UNPROVEN` items: ask 2-4 quick questions before teaching. Not a test — a
+- `UNPROVEN` items: ask 2-4 quick questions before teaching. Give the parts
+  separate named inputs using `interaction.py request`. Not a test — a
   check that the ground is where the model thinks it is. Record the results
   as attempts with `kind: probe`; probes never move state.
 - `ASSUMED BACKGROUND`: candidates for a sidequest. Do not teach them inline;

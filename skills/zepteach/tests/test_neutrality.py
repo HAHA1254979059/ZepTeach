@@ -138,6 +138,7 @@ class TestNothingHasToBeInstalled:
         "subprocess", "tempfile", "shutil", "posixpath", "shlex",
         "unicodedata", "datetime", "pathlib", "collections", "xml",
         "__future__", "typing", "io", "csv", "itertools", "textwrap",
+        "hashlib",
     }
 
     def test_no_shipped_script_imports_anything_third_party(self):

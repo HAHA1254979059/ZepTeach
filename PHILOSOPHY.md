@@ -53,7 +53,7 @@ groups:
 
 Treating a limitation of the previous tool as if it were a fact about learning
 would attribute it to the wrong cause and produce the wrong fix. That is why
-this document has two sets of principles: eight about how people learn, eight
+this document has two sets of principles: eight about how people learn, nine
 about how this is built.
 
 **The sixteen complaints are not a complete list, and addressing all of them
@@ -313,7 +313,7 @@ moving without applying pressure).
 
 ---
 
-## 2b. Eight principles about how this is built
+## 2b. Nine principles about how this is built
 
 The learning principles say what should happen. This section says what makes
 those things achievable, and what must not break while doing them. These are
@@ -468,6 +468,26 @@ outside that list is refused, wherever the work runs.
 data directory can be moved by setting `ZEPTEACH_ROOT`; every adjustable number
 records where its value came from; a test that fails if a subject name appears
 anywhere in the files that ship.
+
+### Engineering 9 — Feedback must change the rule that produced the failure
+
+User feedback describes what happened to one learner. Before changing the
+plugin, trace that event through the whole teaching flow: what the learner
+needed, which instruction the assistant read, which data was written, and
+which check would have refused the bad outcome. Look for other moments that
+use the same missing decision. A fix is complete when those moments share a
+clear rule and a realistic check, rather than when the reported example alone
+works.
+
+This does not make every preference universal. Preserve the learner's choice
+and the host's actual capabilities. In particular, a convenient way to enter
+an answer must not quietly change what the answer proves. Test the behavior
+that mattered to the learner, then verify the teaching still works when the
+preferred interface is unavailable.
+
+**What it becomes**: feedback records include the missing decision and its
+affected paths. Shared behavior is implemented once and routed to every
+relevant stage. Tests cover the teaching consequence and a usable fallback.
 
 ---
 

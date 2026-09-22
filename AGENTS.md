@@ -119,14 +119,14 @@ It prints nothing when there is nothing to say.
 python -m pytest skills/zepteach/tests -q
 ```
 
-856 tests, no dependencies beyond pytest itself. They are worth reading:
+The test suite needs no dependency beyond pytest itself. Its tests are worth reading:
 most of them state, in the test name and docstring, a specific way this could
 go wrong while still producing output that reads perfectly well.
 
 ## The design, if you want it
 
 `PHILOSOPHY.md` is the foundation. Eight principles about how people learn,
-eight about building something that survives contact with a real user, two
+nine about building something that survives contact with a real user, two
 places where those conflict and how each is settled.
 
 Every doctrine file opens by naming which principle it implements. A file

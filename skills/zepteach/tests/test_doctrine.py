@@ -60,6 +60,7 @@ class TestEveryFileNamesItsPrinciple:
         for n in range(1, 9):
             assert "### Principle " + str(n) + " " in phil, n
             assert "### Engineering " + str(n) + " " in phil, n
+        assert "### Engineering 9 " in phil
 
 
 class TestTheyStaySmall:

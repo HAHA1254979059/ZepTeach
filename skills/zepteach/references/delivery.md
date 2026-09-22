@@ -68,12 +68,11 @@ refuse an item that ignored it. The learner had to notice and say so, twice.
 
 **Response mode is not difficulty.** `form` says what the mind is doing;
 `response` says what the hands are doing. Deriving a result can be answered
-by typing the derivation, by choosing between three candidate derivations, or
-by filling in the two steps that carry the point. Those are the same
-cognitive work and very different amounts of typing. Picking the cheapest one
-that still shows the thing is not making the question easier, and a learner
-who spends four minutes typing subscripts has been measured on their
-patience.
+by typing the derivation or by filling in the steps that carry the point.
+Choosing between candidate derivations may instead measure recognition, so
+do not assume it proves the same thing. Pick the least burdensome input that
+still shows the intended thinking. A learner who spends four minutes typing
+subscripts has been measured on their patience.
 
 **Notation gets its own channel.** `profile.notation_input` records how this
 person supplies anything prose typing handles badly — formulas, structures,
@@ -92,8 +91,8 @@ An answer that arrives as one paragraph has to be read by a person to be
 used at all, which is how an assessment ends up living in the conversation
 instead of in the records.
 
-**How the item is shown is the host's business, not this plugin's.** If the
-environment can render an interactive form, use it; that is better and the
-learner will say so. If it cannot, lay the same fields out as numbered
-prompts and ask them to answer by name. The `response` block is what carries
-across both, so the decision survives the environment.
+**How the item is shown follows `interaction-contract.md`.** Generate the
+learner input request from its `response` block. If the host can show and
+submit a conversation-inline view, use it. Otherwise present the same named
+fields in the conversation. Never replace the intended evidence just to get
+a convenient control.

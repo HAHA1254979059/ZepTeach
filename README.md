@@ -50,6 +50,13 @@ message. The benefit is specific: it comes from you controlling when the next
 piece arrives, so each piece ends with a question rather than "shall I go
 on?".
 
+**Answering should not get in the way of thinking.** Session condition,
+prerequisite checks, and exercises share one input contract. When the host
+supports conversation-inline controls, ZepTeach can show choices and named
+answer fields there. Otherwise it presents the same fields in text. A shorter
+input is used only when it still shows the understanding the question asks
+for.
+
 **Every number says where it came from.** Forty-seven tunable values, each
 marked as supported by evidence, borrowed from an established tool, an
 engineering decision, or a starting guess to be replaced by your own records.
@@ -130,6 +137,12 @@ mklink /J "%USERPROFILE%\.agents\skills\zepteach" "C:\path\to\ZepTeach\skills\ze
 
 Invoke it with `$zepteach`, or just say what you want to study and let Codex
 pick it up from the description.
+
+When Codex exposes conversation-inline views, session questions and exercise
+answers appear beside the lesson with selectable options or labeled fields.
+The view submits the answer back into the conversation. If that capability is
+unavailable, the same question appears as text. File and photo answers use
+the conversation's attachment control.
 
 **Codex has no subagents, so marking has to be kept separate by hand.** That
 matters more than it sounds: a marker that watched the teaching is the single
@@ -228,7 +241,7 @@ which numbers are guesses and which are not.
 python -m pytest skills/zepteach/tests -q
 ```
 
-856 tests, run on Linux, macOS and Windows against Python 3.10 and 3.13. Many
+The test suite runs on Linux, macOS and Windows against Python 3.10 and 3.13. Many
 are worth reading on their own: each states, in its name and docstring, a
 specific way this could go wrong while still producing output that reads
 perfectly well.

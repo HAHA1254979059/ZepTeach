@@ -170,7 +170,7 @@
     },
     "response": {
       "type": "object",
-      "description": "How the learner supplies the answer. Separate from `form`, which is what their mind is doing, because the same cognitive work can be answered by typing a derivation, by choosing between three candidate derivations, or by filling the two steps that carry the point - identical evidence, very different amounts of typing. This block is required, and it is required for one specific reason: when it did not exist, the shape of the answer was decided in the moment by whoever was teaching. That produced a good interactive form for twenty minutes and then quietly reverted to a wall of prose, because nothing on disk remembered the decision and nothing could refuse an item that ignored it.",
+      "description": "How the learner supplies the answer, separate from `form`, which is what their mind is doing. A shorter input may reduce typing, but choosing a derivation can measure recognition rather than the ability to produce one. Preserve the evidence the item is meant to collect. The response shape is required so it cannot drift between items; interaction-contract.md specifies how supported hosts present it inline.",
       "required": [
         "mode"
       ],

@@ -58,7 +58,7 @@
       "numeric",
       "upload"
     ],
-    "description": "How the learner physically supplies the answer. Separate from cognitive_action, which is what their mind is doing: deriving a result is one cognitive action and can be answered by typing it, by choosing between three candidate derivations, or by filling the two steps that matter, and those are very different amounts of work for the same evidence. free_text: they write it. choice: they pick from options the item lists. fill_blanks: they fill named slots. numeric: a single value. upload: they supply a file or a photograph of work done on paper. An item with no response mode may not be issued, because then the shape of the answer is decided in the moment and is forgotten by the next item."
+    "description": "How the learner supplies the answer, separate from the thinking the item tests. free_text: they write it. choice: they pick from options. fill_blanks: they fill named slots. numeric: a value. upload: they supply a file or photograph. A convenient input must still preserve the evidence the item needs; choosing among answers may test recognition instead of production. An item with no response mode may not be issued because its answer shape would be improvised and forgotten by the next item."
   },
   "notation_channel": {
     "enum": [

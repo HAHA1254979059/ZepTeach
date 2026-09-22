@@ -98,6 +98,9 @@ count.
   filled in, a number, or a file. An item that does not say cannot be issued,
   and an item that needs typed notation from someone who said they would
   photograph it is refused.
+- Learner input uses the routed interaction contract. Where conversation-inline
+  controls can submit an answer, use them for condition questions, probes and
+  exercises. Do not place floating choices over the lesson.
 - A concept may not be taken deeper than its `depth_target`.
 - An exercise without a grading spec may not be issued.
 - An anchored-tier item must cite its external source and source type.

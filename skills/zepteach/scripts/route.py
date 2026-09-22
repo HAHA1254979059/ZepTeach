@@ -36,7 +36,7 @@ REF_DIR = Path(__file__).resolve().parents[1] / "references"
 ROUTES = {
     "setup1": {
         "what": "first-time setup: one question, then start",
-        "read": ["setup-stage1.md", "persona-zep.md"],
+        "read": ["setup-stage1.md", "persona-zep.md", "interaction-contract.md"],
         "run": ["intake.py known", "intake.py next --group start",
                 "zt_state.py init",
                 "intake.py write --data <json>", "zt_state.py validate"],
@@ -45,7 +45,8 @@ ROUTES = {
     },
     "course-new": {
         "what": "design a course from a goal",
-        "read": ["curriculum-design.md", "adapter-contract.md"],
+        "read": ["curriculum-design.md", "adapter-contract.md",
+                 "interaction-contract.md"],
         "run": ["intake.py next --group course",
                 "curriculum.py register-concepts --course <slug>",
                 "curriculum.py validate --course <slug>"],
@@ -54,7 +55,8 @@ ROUTES = {
     },
     "setup2": {
         "what": "second-stage setup: what this course needs to practise on, and how close we can get to it",
-        "read": ["setup-stage2.md", "practice-reach.md"],
+        "read": ["setup-stage2.md", "practice-reach.md",
+                 "interaction-contract.md"],
         "run": ["practice_reach.py check --course <slug>",
                 "zt_state.py gate course-env --course <slug>"],
         "conditional": {"tools": ["resources-and-tools.md"]},
@@ -62,7 +64,8 @@ ROUTES = {
     },
     "replan": {
         "what": "change what is being learned, how fast, or how deep",
-        "read": ["curriculum-design.md", "persona-zep.md"],
+        "read": ["curriculum-design.md", "persona-zep.md",
+                 "interaction-contract.md"],
         "run": ["curriculum.py drift --course <slug>",
                 "curriculum.py replan --course <slug> --because <words> "
                 "--file <new-curriculum.json>"],
@@ -83,9 +86,12 @@ ROUTES = {
     "lesson": {
         "what": "teach",
         "read": ["persona-zep.md", "teaching-contract.md", "delivery.md",
-                 "mode-router.md", "session-protocol.md"],
-        "run": ["session.py open --course <slug> --energy <level>",
+                 "mode-router.md", "session-protocol.md",
+                 "interaction-contract.md"],
+        "run": ["interaction.py energy (unless already stated)",
+                "session.py open --course <slug> --energy <level>",
                 "learner.py probe --course <slug> --lesson <id>",
+                "interaction.py request --file <probe-request.json>",
                 "curriculum.py lesson --course <slug> --lesson <id>",
                 "teaching.py ladder",
                 "learner.py teach --course <slug> --file <exposition.json>"],
@@ -101,8 +107,9 @@ ROUTES = {
     },
     "exercise": {
         "what": "set and run exercises",
-        "read": ["exercise-engine.md"],
-        "run": ["exercise.py issue --course <slug> --lesson <id>"],
+        "read": ["exercise-engine.md", "interaction-contract.md"],
+        "run": ["exercise.py issue --course <slug> --file <item.json>",
+                "interaction.py exercise --file <item.json>"],
         "conditional": {"adapter": True, "tools": ["resources-and-tools.md"]},
         "defer": "the rubric itself goes to the grader, not into this context",
     },
@@ -119,7 +126,8 @@ ROUTES = {
     },
     "review": {
         "what": "run due reviews and retests",
-        "read": ["mastery-policy.md", "persona-zep.md"],
+        "read": ["mastery-policy.md", "persona-zep.md",
+                 "interaction-contract.md"],
         "run": ["review.py rebuild --course <slug>",
                 "review.py due --course <slug>",
                 "review.py plan --concept <id>"],
@@ -127,7 +135,7 @@ ROUTES = {
     },
     "sidequest": {
         "what": "fill a background gap without derailing the main line",
-        "read": ["sidequest-protocol.md"],
+        "read": ["sidequest-protocol.md", "interaction-contract.md"],
         "run": ["learner.py probe --course <slug> --lesson <id>"],
         "agent": "zt-sidequest-tutor",
         "isolate": "the subagent gets the gap, the register and a depth "
@@ -154,7 +162,8 @@ ROUTES = {
     },
     "assess": {
         "what": "stage assessment and an objective progress report",
-        "read": ["assessment-rubrics.md", "mastery-policy.md"],
+        "read": ["assessment-rubrics.md", "mastery-policy.md",
+                 "interaction-contract.md"],
         "run": ["progress_report.py --course <slug>"],
         "agent": "zt-grader",
     },
