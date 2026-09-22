@@ -172,3 +172,12 @@ inside are scaffolding, not material for anyone to learn from.
 The learner's data still goes wherever `ZEPTEACH_ROOT` points, or to a
 `ZepTeach` directory in the current user's home directory by default. It is
 never inside the repository.
+
+## Development feedback
+
+When the user gives feedback about ZepTeach, append it to the project-root
+`feedback.md`. Keep the user's observation separate from a proposed cause or
+fix, and identify the source conversation or document. This file is local and
+private: it is ignored by Git, must never be staged or pushed, and must not
+be included in a plugin distribution. Read it when working on relevant
+development issues. Do not copy its private details into tracked files.

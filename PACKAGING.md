@@ -26,6 +26,7 @@ them when they set up a course, and they live in the learning data root
 |---|---|
 | `skills/zepteach/tests/` | The example courses in the tests exist to check this plugin, not to be taught to anyone. Their purpose is to make code that assumes a particular subject fail during development. Shipping them would place a mathematics course and a history course inside a plugin whose whole design depends on knowing neither. |
 | `__pycache__/`, `.pytest_cache/` | files produced by running Python and the test runner; regenerated on any machine, and specific to the one that made them |
+| `feedback.md` | Private development feedback. Keep it local; do not commit, push, or include it in a plugin package. |
 | files written by a check that ran an external program | see rule 2 below |
 
 ## Two rules this file exists to enforce
