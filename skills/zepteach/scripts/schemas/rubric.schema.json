@@ -45,6 +45,11 @@
             "type": "string",
             "minLength": 1
           },
+          "concept_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "For a multi-concept item, the one concept this criterion measures. Every criterion must name one so an unrelated error cannot change another concept's state."
+          },
           "requires": {
             "type": "string",
             "minLength": 1,

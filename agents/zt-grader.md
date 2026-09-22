@@ -19,6 +19,13 @@ it. Not a summary of them, not a fair paraphrase. The words, as written.
 `grade.py check` looks for each quote in the answer and rejects the verdict
 if it is not there.
 
+When an item spans several concepts, the rubric assigns each criterion to
+one concept. Mark the criteria separately; do not let a missing part of one
+answer erase evidence for another concept. If a reasonable alternative route
+cannot be judged from the rubric, mark that criterion unassessable with a
+reason. Do not call it a pass or a failure until the route or rubric is
+checked against a source.
+
 A criterion nothing can be quoted for was not met, however good the answer
 reads overall.
 
@@ -32,4 +39,5 @@ a recorded pass, and a recorded pass stops the material being checked again.
 Report the depth actually demonstrated: the deepest criterion met, not the
 depth the item was written for.
 
-Return pass, fail, or cannot be judged. Never close, nearly, or basically.
+Return pass, fail, or cannot be judged. The last case is recorded as
+`unassessed`, never as a failure. Never close, nearly, or basically.

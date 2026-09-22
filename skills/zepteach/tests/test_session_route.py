@@ -61,6 +61,12 @@ class TestBrief:
         b = se.build_brief(root, "linear-algebra", "normal")
         assert b["register"]["register"] == "technical_with_gloss"
 
+    def test_open_session_does_not_assign_a_three_tier_quota(self, root):
+        sid = open_session(root)
+        doc = zs.read_json(root / "courses" / "linear-algebra" /
+                           "sessions" / sid / "session.json")
+        assert "exercise_tiers" not in doc["plan"]
+
     def test_a_course_in_an_expert_field_gets_the_terse_register(self, root):
         c = fx.course(domain="semiconductor-physics")
         zs.atomic_write_json(

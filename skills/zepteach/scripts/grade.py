@@ -40,7 +40,7 @@ from sandbox import Refused  # noqa: E402
 # what the marker is allowed to see
 # ---------------------------------------------------------------------------
 
-ALLOWED = ("exercise_id", "prompt", "assets", "answer_key", "tier",
+ALLOWED = ("exercise_id", "concept_ids", "prompt", "assets", "answer_key", "tier",
            "expected_minutes", "transfer_dimensions")
 
 WITHHELD = {
@@ -119,6 +119,14 @@ def check_verdict(verdict: dict, rubric: dict, answer: str) -> dict:
 
     missing_quotes, absent_quotes = [], []
     for cid, entry in met.items():
+        if entry.get("assessable") is False:
+            if entry.get("met") or not (entry.get("reason") or "").strip():
+                raise Refused(
+                    "GRD021", "an unassessable criterion needs a reason "
+                    "and cannot also be marked met: " + cid,
+                    "keep this result unassessed until the alternative "
+                    "answer or the rubric has been checked against a source")
+            continue
         if not entry.get("met"):
             continue
         quotes = entry.get("quotes") or []
@@ -152,6 +160,12 @@ def check_verdict(verdict: dict, rubric: dict, answer: str) -> dict:
                       if not met.get(c, {}).get("met")]
 
     stated = verdict.get("verdict")
+    unassessable = [cid for cid, entry in met.items()
+                    if entry.get("assessable") is False]
+    if stated == "pass" and unassessable:
+        raise Refused("GRD022", "a pass cannot contain unassessed criteria",
+                      "verify the alternative route or revise the rubric "
+                      "before recording a pass")
     if stated == "pass" and unmet_required:
         raise Refused(
             "GRD004",
@@ -161,6 +175,7 @@ def check_verdict(verdict: dict, rubric: dict, answer: str) -> dict:
             "whatever else the answer did well")
 
     return {"ok": True, "verdict": stated,
+            "unassessable": unassessable,
             "required_unmet": unmet_required,
             "criteria_met": sorted(c for c, e in met.items()
                                    if e.get("met"))}
@@ -228,13 +243,86 @@ def failure_kind(verdict: dict, rubric: dict) -> dict:
         "unmet_concept": unmet_concept,
         "unmet_execution": unmet_execution,
         "what_to_do": (
-            "redo that step, nothing else. Setting another item on this "
-            "concept tests something the answer already showed"
+            "the concept held. If this execution step matters for the "
+            "course goal, offer one local correction; otherwise move on. "
+            "Do not set another full item on what the answer already showed"
             if unmet_execution and not unmet_concept else
             "the idea itself is what came apart; this is worth teaching into"
             if unmet_concept else
             "nothing outstanding"),
     }
+
+
+def check_concept_coverage(rubric: dict, item: dict) -> None:
+    """Refuse a multi-concept rubric that cannot allocate its evidence."""
+    concepts = item.get("concept_ids") or []
+    criteria = rubric.get("criteria") or []
+    foreign = [c.get("criterion_id") for c in criteria
+               if c.get("concept_id") and c.get("concept_id") not in concepts]
+    if foreign:
+        raise Refused(
+            "GRD019", "the rubric grades concepts outside this item: " +
+            ", ".join(map(str, foreign)),
+            "assess only what the item announced; make a separate item for "
+            "the other concept if the course goal needs it")
+    if len(concepts) > 1:
+        unassigned = [c.get("criterion_id") for c in criteria
+                      if not c.get("concept_id")]
+        missing = [cid for cid in concepts if not any(
+            c.get("concept_id") == cid for c in criteria)]
+        if unassigned or missing:
+            raise Refused(
+                "GRD020",
+                "multi-concept marking has criteria without one known "
+                "concept, or concepts with no criteria",
+                "assign each criterion to exactly one concept before "
+                "marking. Unassigned: " + ", ".join(map(str, unassigned)) +
+                "; no criteria: " + ", ".join(missing))
+
+
+def concept_results(verdict: dict, rubric: dict, item: dict) -> list:
+    """Derive independent concept results from criterion-level evidence.
+
+    One whole-item verdict cannot describe two unrelated ideas. A rubric for
+    a multi-concept item therefore assigns every criterion to one concept.
+    If it cannot do that, the answer may be discussed but may not change
+    either concept's mastery from a guessed allocation.
+    """
+    check_concept_coverage(rubric, item)
+    concepts = item.get("concept_ids") or []
+    criteria = rubric.get("criteria") or []
+    out = []
+    for cid in concepts:
+        subset = [c for c in criteria if len(concepts) == 1 or
+                  c.get("concept_id") == cid]
+        if not subset:
+            continue
+        local = dict(rubric, criteria=subset)
+        scored = score(verdict, local)
+        met = verdict.get("criteria_met") or {}
+        if any(met.get(c["criterion_id"], {}).get("assessable") is False
+               for c in subset):
+            out.append({"concept_id": cid, "verdict": "unassessed"})
+            continue
+        matched = [c for c in subset if met.get(c["criterion_id"], {}).get("met")]
+        status = ("pass" if scored["passes"] else
+                  "partial" if matched else "fail")
+        quotes = [q for c in matched
+                  for q in met.get(c["criterion_id"], {}).get("quotes", [])]
+        failed = [c["criterion_id"] for c in subset
+                  if not met.get(c["criterion_id"], {}).get("met")]
+        result = {"concept_id": cid, "verdict": status}
+        if quotes:
+            result["evidence_quotes"] = quotes
+        if failed:
+            result["failure_points"] = failed
+        if status != "pass":
+            result["execution_only"] = failure_kind(verdict, local)["execution_only"]
+        depth = depth_shown(verdict, local)
+        if status == "pass" and depth:
+            result["depth_demonstrated"] = depth
+        out.append(result)
+    return out
 
 
 def depth_shown(verdict: dict, rubric: dict) -> int:
@@ -256,7 +344,13 @@ def depth_shown(verdict: dict, rubric: dict) -> int:
 # ---------------------------------------------------------------------------
 
 def render(result: dict, scored: dict) -> str:
-    lines = ["VERDICT  " + ("pass" if scored["passes"] else "fail")]
+    status = (result["verdict"] if result.get("verdict") in
+              ("unassessed", "partial") else
+              "pass" if scored["passes"] else "fail")
+    lines = ["VERDICT  " + status]
+    if status == "unassessed":
+        lines.append("  no mastery change; verify the answer or rubric")
+        return "\n".join(lines)
     lines.append("  met " + str(round(scored["fraction"] * 100)) + "% of "
                  "weighted criteria, needs " +
                  str(round(scored["threshold"] * 100)) + "%")
@@ -279,6 +373,13 @@ def cmd_package(args) -> int:
     item = _load(args.item)
     rubric = _load(args.rubric)
     answer = Path(args.answer).read_text(encoding="utf-8")
+    try:
+        check_concept_coverage(rubric, item)
+    except Refused as r:
+        print("REFUSED [" + r.code + "]  " + r.message, file=sys.stderr)
+        if r.suggestion:
+            print("instead: " + r.suggestion, file=sys.stderr)
+        return zs.EXIT_GATE
     payload = package(item, rubric, answer)
     found = leaks(payload)
     if found:
@@ -300,11 +401,20 @@ def cmd_check(args) -> int:
         if r.suggestion:
             print("instead: " + r.suggestion, file=sys.stderr)
         return zs.EXIT_GATE
+    item = _load(args.item) if args.item else None
+    try:
+        per_concept = concept_results(verdict, rubric, item) if item else None
+    except Refused as r:
+        print("REFUSED [" + r.code + "]  " + r.message, file=sys.stderr)
+        if r.suggestion:
+            print("instead: " + r.suggestion, file=sys.stderr)
+        return zs.EXIT_GATE
     scored = score(verdict, rubric)
     kind = failure_kind(verdict, rubric)
     if args.json:
         print(json.dumps({"checked": result, "score": scored,
                           "failure_kind": kind,
+                          "concept_results": per_concept,
                           "depth_demonstrated": depth_shown(verdict, rubric)},
                          ensure_ascii=False, indent=2))
     else:
@@ -341,6 +451,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     sp = sub.add_parser("check", help="does this verdict support itself")
     sp.add_argument("--verdict", required=True)
+    sp.add_argument("--item", help="item required to separate concept results")
     sp.add_argument("--rubric", required=True)
     sp.add_argument("--answer", required=True)
     sp.set_defaults(func=cmd_check)

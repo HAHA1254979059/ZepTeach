@@ -23,6 +23,14 @@ noise for an expert.
 `formalism_tolerance` 1-5 modulates how fast to reach the formal statement.
 `require_operational_definition` decides whether a new term must be glossed.
 
+Use the concept's registered domain, not only the course's broad domain. A
+learner can know one subfield and lack the next. When they name that gap,
+record a narrower setting with `learner.py set-register --domain <domain>
+--register <register> --because <their words>` before teaching. Other
+fields keep their settings. An explanation recorded at a different level
+from the stored setting is refused, so this change survives the current
+conversation.
+
 ## The explanation ladder is trimmable, not mandatory
 
 1. **Phenomenon** — what is observed, what breaks without this
@@ -37,6 +45,10 @@ is not thoroughness, it is the expertise reversal effect in action.
 - `terse_technical`: start at 3 or 4
 - `technical_with_gloss`: start at 2 or 3
 - `analogy_first`: start at 1
+
+An `analogy_first` explanation must actually include the phenomenon or an
+intuitive picture before formalism. It need not invent an analogy when none
+helps; a concrete reason the concept exists is enough.
 
 Rung 5 is mandatory in every register. A concept without its failure mode
 gets misapplied, and the transfer test catches that later at much higher
@@ -68,17 +80,39 @@ Not a dictionary gloss. A handle the learner can act on.
 
 ## Generation before explanation
 
-For a **conceptual** target the default order is not "explain, then
-practise". Let them try something untaught, let it fail, then teach into the
-gap it opened. `mode-router.md` says when this applies.
+For a **conceptual** target with solid prerequisites, an untaught attempt can
+open a useful gap. Let them try, then teach into the gap it exposed.
+`mode-router.md` states the conditions. This is not a default when the learner
+has already named the gap or asked to be taught first. In that case, deliver
+an explanation before another task.
 
-A request to hear something again is a fluency signal, not a knowledge gap.
-First move is a retrieval attempt:
+A request to hear something again may mean several things. If the learner
+previously learned it and wants to retrieve it, a short retrieval attempt can
+show which part needs repair. If they say the explanation was absent,
+invisible, or did not establish the basics, teach first. Do not use retrieval
+to make them demonstrate knowledge they say was never supplied.
+
+When retrieval is appropriate, ask briefly:
 
 > 先别急着让我再讲。你现在能说出这一步为什么要归一化吗？
 
-Then explain into whatever the attempt exposed. Re-explaining first wastes the
-strongest diagnostic available.
+Then explain into whatever the attempt exposed.
+
+## Finish the explanation before assessing it
+
+The explanation must appear in the learner-visible message. Reasoning,
+internal notes, tool output, and the question stem do not count as delivered
+teaching. Give the purpose, a concrete or minimal case, the rule, and its
+boundary at the register this learner needs. Define unfamiliar terms before
+using them. More detail is appropriate when the learner has named a missing
+foundation; do not compress that into a pretext for the next question.
+
+After the visible explanation, pause for the learner to point out what is
+unclear. Address that question before offering a small practice item. This
+check is for adjusting teaching, not for declaring mastery. Do not force a
+rating of understanding. If the learner says they are ready, move to the
+small practice item; if they explicitly ask to be tested immediately, follow
+that request.
 
 ## Feedback timing
 

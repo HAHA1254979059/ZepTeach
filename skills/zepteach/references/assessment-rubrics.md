@@ -69,6 +69,14 @@ passes only when both hold.
 
 Say so. Do not reconstruct what the learner probably meant.
 
+If the answer follows a plausible route the rubric did not anticipate,
+mark the affected criterion `assessable: false` with a reason. Check that
+route against the teaching source, then revise the rubric if needed. The
+attempt may be kept as `unassessed`: it changes no mastery state and does
+not count as failure. Other concepts in the same item can still have
+separate results. An input that could not be read is also unassessed, not
+wrong.
+
 An incomplete answer that gets a charitable reading becomes a recorded pass,
 and a recorded pass schedules the next review as though the material were
 known. The cost of being wrong here is not one bad mark; it is a concept that
@@ -86,12 +94,25 @@ looks correct.
 
 ## What the verdict contains
 
-- The verdict: pass, fail, or cannot be judged. Never close, nearly, or
-  basically.
+- The verdict: pass, partial, fail, or cannot be judged (recorded as
+  `unassessed`). Never close, nearly, or basically.
 - Each criterion, met or not, with quotes for every one marked met.
 - For each unmet criterion, what was missing, in terms of the criterion
   rather than in terms of the learner.
 - The depth demonstrated.
+
+For an item covering several concepts, each criterion names exactly one
+`concept_id`. Run `grade.py check --item <item>` to obtain separate results.
+The item can fail overall while one concept has passed. Record the separate
+results in `attempt.concept_results`; `learner.py record` refuses a new
+multi-concept attempt with only the whole-item verdict. An old record without
+separable evidence remains visible but is not retroactively divided by guess.
+
+Do not infer inability from a missing answer, a notation problem, or a
+calculation slip. Say what the answer actually established, what needs a
+local correction, and what was not observed. The mastery state remains a
+strict claim about independent retention, not a summary of every capability
+the learner showed in this one answer.
 
 ## Handing it back
 
@@ -113,6 +134,13 @@ approximation stops holding", not "shows good understanding". Each carries
 what a passing answer would actually say, so that a marker has something
 concrete to compare against.
 
+Make a criterion required only if the question and the course's target for
+that concept actually require it. A nearby advanced concept or a preferred
+presentation style must not become an unstated condition for passing the
+question. If the answer reveals a separate gap, teach or assess that gap
+separately. `grade.py package` refuses criteria tagged to a concept the item
+does not name.
+
 `common_miss` is the most useful line in most rubrics. It names the near-miss
 that reads as correct, which is the case where marking actually goes wrong.
 
@@ -132,11 +160,13 @@ The distinction has to be in the rubric, written before the answer arrives,
 because a wrong number looks identical either way once it is on the page.
 
 `grade.py check` reports `EXECUTION ONLY` when every concept criterion was
-met and the only unmet ones were execution. Record the attempt with
-`execution_only: true`. What follows from it:
+met and the only unmet ones were execution. Record that distinction on the
+affected concept. What follows from it:
 
-- **Have them redo that step.** Not a new item on the concept. The answer
-  already showed the concept; another item tests what was just demonstrated.
+- **Do not assign another full item on the same concept in this session.**
+  If the execution step matters for the course goal, offer one targeted
+  correction. If it does not, record the slip and move on. The learner may
+  explicitly ask for another full item; record that request and reason.
 - The state does not move backwards, and the next review interval does not
   shorten. Both of those used to happen.
 - It does not promote either. A slip is not a clean answer.

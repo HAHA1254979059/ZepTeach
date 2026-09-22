@@ -7,7 +7,9 @@
 
 The teaching mode is chosen from the situation, not from the mood of the turn.
 Inputs: what kind of content, what state the concept is in, the register for
-this domain, declared energy, and the depth target.
+this concept's domain, declared energy, and the depth target. A course's
+broader domain is not enough when the learner knows one subfield but not
+another.
 
 ## The nine modes
 
@@ -30,6 +32,7 @@ Read top to bottom; first match wins.
 | If | Mode |
 |---|---|
 | a prerequisite is on hold and not bypassed | **stop** — `learner.py probe` gate, exit 3 |
+| the learner explicitly says this material was never taught, or asks to learn it from the beginning | `direct_instruction` or `worked_example`; explain visibly before any diagnostic or scored item, then ask what remains unclear |
 | the concept is `shaky` | `repair` |
 | depth target ≥ 4 and the concept is at least `consolidating` | `critique` |
 | the concept is new, **conceptual**, the probe came back clean, energy not low | `productive_failure` |
@@ -54,6 +57,9 @@ Use it when all hold:
   confusion. A failed probe kills this mode: repair or sidequest first
 - energy is not `low` — this mode is expensive
 - there is time for the teach half; never leave the failure unresolved
+- the learner has not explicitly asked for an explanation first or said the
+  necessary material is unfamiliar. Such a statement is more useful than a
+  fresh failure designed to discover the same gap
 
 Do not use it for: safety-relevant procedures, notation and conventions, or
 anything where a wrong first attempt would be rehearsed rather than examined.

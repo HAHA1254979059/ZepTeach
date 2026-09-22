@@ -112,6 +112,19 @@ class TestFillBlanksHasToNameItsBlanks:
             "fields": [{"field_id": "step1", "label": "the dot product"},
                        {"field_id": "step2", "label": "the norm"}]}))["ok"]
 
+    def test_a_grid_has_a_declared_shape(self):
+        bad = item(response={"mode": "fill_blanks", "fields": [
+            {"field_id": "grid", "label": "value",
+             "grid": {"rows": 0, "columns": 2}}]})
+        assert refusal(lambda: ex.check_issuable(bad)).code == "EXE025"
+
+    def test_a_grid_obeys_notation_input_preference(self):
+        grid = item(response={"mode": "fill_blanks", "fields": [
+            {"field_id": "grid", "label": "value",
+             "grid": {"rows": 2, "columns": 2}}]})
+        assert refusal(lambda: ex.check_issuable(
+            grid, notation_input=["photographs"])).code == "EXE024"
+
 
 class TestNotationIsNotTypedByPeopleWhoSaidTheyWouldNotTypeIt:
     """The learner said, in the middle of a lesson, that typing formulas was

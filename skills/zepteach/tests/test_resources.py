@@ -182,16 +182,18 @@ class TestDecidingWhetherToWireAnythingUp:
         assert out["build"] is None
         assert "sentence in how_to_use" in out["why"]
 
-    def test_a_tool_with_a_procedure_becomes_a_skill(self):
+    def test_a_procedure_checks_existing_capabilities_first(self):
         out = rs.worth_wiring(a_tool(invocation={"command": ["x"]}))
-        assert out["build"] == "skill"
+        assert out["build"] == "check_existing"
+        assert out["if_missing"] == "skill"
 
-    def test_a_tool_the_learner_runs_still_becomes_a_skill(self):
+    def test_a_tool_the_learner_runs_still_has_a_capturable_procedure(self):
         """What they know about using it is the thing worth keeping, whether
         or not anything here can run it."""
         out = rs.worth_wiring(a_tool())
-        assert out["build"] == "skill"
-        assert "survives being forgotten" in out["why"]
+        assert out["build"] == "check_existing"
+        assert out["if_missing"] == "skill"
+        assert "survive being forgotten" in out["why"]
 
     def test_frequent_use_without_a_procedure_asks_first(self):
         out = rs.worth_wiring({"tool_id": "t", "what_it_does": "x",
@@ -247,7 +249,8 @@ class TestCli:
         assert run(["--root", str(root), "review",
                     "--course", "linear-algebra"]) == zs.EXIT_OK
         out = capsys.readouterr().out
-        assert "checker  ->  skill" in out
+        assert "checker  ->  check existing capabilities first" in out
+        assert "if none fits: skill" in out
         assert "shown to them" in out
 
     def test_show_separates_what_the_plugin_runs_from_what_they_run(

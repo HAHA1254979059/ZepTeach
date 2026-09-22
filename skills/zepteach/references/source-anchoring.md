@@ -7,8 +7,12 @@
 Loaded only when the course is marked `source_anchored`. Most courses are
 not, and never read this.
 
-When a course is anchored, a lesson may not be taught before the mapped part
-of the material has been read. That is a refusal, not a preference.
+When a course is anchored, an explanation must name its mapped, citable
+source. `learner.py teach` refuses a missing or unusable source reference.
+The teacher must also read the actual span before explaining it. The script
+can check the source mapping and readability record; it cannot prove what a
+model has read or understood, so the visible citation and subsequent
+explanation remain open to review.
 
 ## Why reading it first is required
 
@@ -49,6 +53,13 @@ something about how the field talks.
 
 Where the material is simply wrong, say that too, with the correction and the
 reason. Not as a criticism of the book: as a fact about what to rely on.
+
+If the learner disputes an explanation or marking, stop treating the current
+answer as a failed recall while the underlying claim is unresolved. Reopen
+the precise span, check the assumptions and notation, correct the visible
+lesson if needed, and only then decide what the answer demonstrated. A
+well-founded alternative route that the rubric did not anticipate is
+unassessed until that check, not evidence that the learner lacks the idea.
 
 ## Parts that could not be read reliably
 

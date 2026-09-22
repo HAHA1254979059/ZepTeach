@@ -175,18 +175,39 @@ def unusable(source: dict) -> dict:
 # ---------------------------------------------------------------------------
 
 def span_for(doc: dict, lesson_span: dict) -> dict:
-    """Resolve a lesson's mapped span into something readable.
+    """Resolve a mapped span and check whether it may be cited.
 
-    A lesson in an anchored course carries source_span. This turns it into
-    the source plus the check on whether it may be cited, in one step, so a
-    lesson cannot get the text and skip the check.
+    This returns the location, not the content. The teaching agent must open
+    the actual passage with an available reader before explaining it.
     """
     source = find(doc, lesson_span.get("source_id"))
-    ref = lesson_span.get("section") or ""
+    ref = (lesson_span.get("section") or lesson_span.get("heading") or
+           lesson_span.get("chapter") or "")
     if lesson_span.get("page_start"):
         ref += " p." + str(lesson_span["page_start"])
         if lesson_span.get("page_end"):
             ref += "-" + str(lesson_span["page_end"])
+    if lesson_span.get("timecode_start"):
+        ref += " @" + str(lesson_span["timecode_start"])
+        if lesson_span.get("timecode_end"):
+            ref += "-" + str(lesson_span["timecode_end"])
+
+    if lesson_span.get("timecode_start") and \
+            source.get("index_status") == "partial":
+        start = lesson_span["timecode_start"]
+        end = lesson_span.get("timecode_end") or start
+        covered = any(
+            row.get("citable") is True and
+            row.get("timecode_start", "") <= start and
+            row.get("timecode_end", "") >= end
+            for row in source.get("toc") or [])
+        if not covered:
+            raise Refused(
+                "SRC012",
+                "this timecoded span is not marked readable in the partial "
+                "source index",
+                "obtain or make a reliable transcript for this span, or "
+                "teach it unanchored and say so")
 
     out = dict(check_citable(source, ref))
     out.update({
@@ -242,6 +263,36 @@ def render(doc: dict) -> str:
     return "\n".join(lines)
 
 
+def teaching_plan(course: dict, curriculum: dict, index: dict,
+                  resources: dict = None) -> dict:
+    """Report source readiness without inventing a preferred subject or tool."""
+    resources = resources or {}
+    rows = index.get("sources") or []
+    ready = [s.get("source_id") for s in rows
+             if s.get("index_status") in ("indexed", "partial")]
+    lessons = [les for mod in curriculum.get("modules") or []
+               for les in mod.get("lessons") or []]
+    missing = [les.get("lesson_id") for les in lessons
+               if not (les.get("source_span") or
+                       (les.get("concepts") and all(
+                           c.get("source_span") for c in les["concepts"]))) ]
+    actions = []
+    if not rows:
+        actions.append("select a teaching source that fits the learner's goal")
+    elif not ready:
+        actions.append("make a registered source readable and addressable")
+    if ready and missing:
+        actions.append("map lesson spans to the source before teaching them")
+    if ready and not course.get("source_anchored"):
+        actions.append("decide with the learner whether this source governs teaching")
+    return {"source_anchored": bool(course.get("source_anchored")),
+            "materials_recorded": len(resources.get("materials") or []),
+            "registered_sources": len(rows),
+            "readable_sources": ready,
+            "lessons_without_mapped_spans": missing,
+            "next_actions": actions}
+
+
 # ---------------------------------------------------------------------------
 # cli
 # ---------------------------------------------------------------------------
@@ -265,6 +316,34 @@ def cmd_show(args) -> int:
     doc = load(root, args.course)
     print(json.dumps(doc, ensure_ascii=False, indent=2) if args.json
           else render(doc))
+    return zs.EXIT_OK
+
+
+def cmd_plan(args) -> int:
+    root = _root(args)
+    cdir = root / "courses" / args.course
+    course_path = cdir / "course.json"
+    if not course_path.exists():
+        print("no such course: " + args.course, file=sys.stderr)
+        return zs.EXIT_NOT_FOUND
+    course = zs.read_json(course_path)
+    cur_path = cdir / "curriculum.json"
+    curriculum = zs.read_json(cur_path) if cur_path.exists() else {}
+    resource_path = cdir / "resources.json"
+    resources = zs.read_json(resource_path) if resource_path.exists() else {}
+    result = teaching_plan(course, curriculum, load(root, args.course),
+                           resources)
+    if args.json:
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+    else:
+        print("SOURCE PLAN  " + args.course)
+        print("  registered " + str(result["registered_sources"]) +
+              ", readable " + str(len(result["readable_sources"])))
+        print("  mapped lessons missing: " +
+              (", ".join(str(s) for s in
+                         result["lessons_without_mapped_spans"]) or "none"))
+        for action in result["next_actions"]:
+            print("  next: " + action)
     return zs.EXIT_OK
 
 
@@ -331,6 +410,11 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--course", required=True)
     sp.add_argument("--json", action="store_true")
     sp.set_defaults(func=cmd_show)
+
+    sp = sub.add_parser("plan", help="is a teaching source selected and mapped")
+    sp.add_argument("--course", required=True)
+    sp.add_argument("--json", action="store_true")
+    sp.set_defaults(func=cmd_plan)
 
     sp = sub.add_parser("register")
     sp.add_argument("--course", required=True)

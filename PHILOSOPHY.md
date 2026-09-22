@@ -250,8 +250,10 @@ ability to carry out the procedure.
 
 **What it became**:
 
-- For conceptual material, attempting before being taught is preferred over
-  teaching then practising.
+- For conceptual material with solid prerequisites, an untaught attempt can
+  be useful when the learner agrees to try it and the explanation follows.
+  When the learner names a missing foundation or asks to be taught first,
+  deliver that explanation before another test.
 - Every lesson ends with the learner restating the material without help, and
   `curriculum.py advance` refuses to move on while an explain-back is owed.
 
@@ -468,6 +470,10 @@ outside that list is refused, wherever the work runs.
 data directory can be moved by setting `ZEPTEACH_ROOT`; every adjustable number
 records where its value came from; a test that fails if a subject name appears
 anywhere in the files that ship.
+
+Optional in-conversation controls may need a host display capability or an
+online formula renderer. Their absence must leave the question readable and
+answerable in text, rather than becoming a hidden condition for learning.
 
 ### Engineering 9 — Feedback must change the rule that produced the failure
 

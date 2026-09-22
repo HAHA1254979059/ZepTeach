@@ -174,6 +174,59 @@ def never_retested(rows: list, now) -> list:
     return sorted(out, key=lambda r: -r["days_since_taught"])
 
 
+def diagnostic_snapshot(attempts: list) -> dict:
+    """Describe observed strengths and gaps without turning them into a score.
+
+    Older multi-concept attempts have only a whole-item verdict. They remain
+    readable, but that verdict cannot honestly be assigned to either
+    concept, so the report counts them separately.
+    """
+    by_concept = {}
+    unattributed = 0
+    legacy_affected = set()
+    for attempt in attempts:
+        ids = attempt.get("concept_ids") or []
+        parts = attempt.get("concept_results")
+        if not parts:
+            if len(ids) != 1:
+                if len(ids) > 1:
+                    unattributed += 1
+                    legacy_affected.update(ids)
+                continue
+            parts = [dict(attempt, concept_id=ids[0])]
+        for part in parts:
+            cid = part.get("concept_id")
+            if not cid:
+                continue
+            row = by_concept.setdefault(cid, {"concept_id": cid})
+            row["last_observed"] = attempt.get("submitted_at")
+            row["last_verdict"] = part.get("verdict")
+            if part.get("verdict") == "unassessed":
+                row["last_observation"] = "not assessed"
+                continue
+            row.pop("last_observation", None)
+            quotes = part.get("evidence_quotes") or []
+            if quotes:
+                row["last_demonstrated"] = quotes[0]
+            failures = part.get("failure_points") or []
+            slips = part.get("slips") or attempt.get("slips") or []
+            if part.get("verdict") == "pass":
+                row.pop("last_concept_gap", None)
+                row.pop("last_execution_issue", None)
+            elif part.get("execution_only"):
+                row.pop("last_concept_gap", None)
+                row["last_execution_issue"] = (failures or slips or
+                                               ["execution needs a redo"])[0]
+            elif part.get("verdict") in ("partial", "fail"):
+                row.pop("last_execution_issue", None)
+                row["last_concept_gap"] = (failures or
+                                           ["answer did not establish this concept"])[0]
+    return {"concepts": sorted(by_concept.values(),
+                               key=lambda row: row["concept_id"]),
+            "older_multi_concept_items_without_attribution": unattributed,
+            "concepts_touched_by_unattributed_items": sorted(legacy_affected)}
+
+
 # ---------------------------------------------------------------------------
 # the report
 # ---------------------------------------------------------------------------
@@ -198,6 +251,7 @@ def build(root: Path, slug: str, now=None) -> dict:
 
     qpath = cdir / "review_queue.json"
     queue = zs.read_json(qpath) if qpath.exists() else {"items": []}
+    attempts = zs.read_jsonl(cdir / "attempts.jsonl")
 
     report = {
         "course": {"slug": slug, "title": course.get("title"),
@@ -219,6 +273,7 @@ def build(root: Path, slug: str, now=None) -> dict:
                 if evidence_behind(r)["delayed"] == 0 and
                 evidence_behind(r)["in_lesson"] > 0),
         },
+        "diagnostics": diagnostic_snapshot(attempts),
         "qualifications": {
             "states_the_evidence_does_not_support": unsupported(rows),
             "mastered_on_a_weak_transfer": weak_transfers(rows),
@@ -277,6 +332,26 @@ def render(r: dict) -> str:
     lines.append("    resting on in-lesson work only: " +
                  str(e["resting_on_in_lesson_work_only"]) +
                  "   (says little about next week)")
+
+    diagnostics = r["diagnostics"]
+    lines.append("")
+    lines.append("WHAT THE ANSWERS SHOW")
+    if not diagnostics["concepts"]:
+        lines.append("  no attributed attempts yet")
+    for row in diagnostics["concepts"]:
+        lines.append("  " + row["concept_id"] + "  " +
+                     str(row.get("last_verdict")))
+        for key, label in (("last_demonstrated", "shown"),
+                           ("last_execution_issue", "execution to redo"),
+                           ("last_concept_gap", "concept to revisit"),
+                           ("last_observation", "observation")):
+            if row.get(key):
+                lines.append("    " + label + ": " + str(row[key]))
+    if diagnostics["older_multi_concept_items_without_attribution"]:
+        lines.append("  older multi-concept items without separable evidence: " +
+                     str(diagnostics["older_multi_concept_items_without_attribution"]))
+        lines.append("  concepts to review, not automatically change: " +
+                     ", ".join(diagnostics["concepts_touched_by_unattributed_items"]))
 
     q = r["qualifications"]
     lines.append("")

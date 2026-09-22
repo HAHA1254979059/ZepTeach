@@ -116,6 +116,7 @@
         },
         "exercise_tiers": {
           "type": "array",
+          "description": "Legacy plan field. The three tiers are available options, not a per-session quota; new sessions leave this field unset.",
           "items": {
             "enum": [
               "anchored",

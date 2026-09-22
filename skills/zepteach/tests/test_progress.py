@@ -150,6 +150,46 @@ class TestTaughtAndNeverRetested:
         assert pr.never_retested(rows, NOW) == []
 
 
+class TestWhatTheAnswersActuallyShow:
+    def test_separate_strength_and_execution_issue(self):
+        attempts = [{
+            "concept_ids": ["course.first", "course.second"],
+            "submitted_at": "2026-09-10T10:00:00+00:00",
+            "concept_results": [
+                {"concept_id": "course.first", "verdict": "pass",
+                 "evidence_quotes": ["the rule is stated"]},
+                {"concept_id": "course.second", "verdict": "partial",
+                 "execution_only": True,
+                 "failure_points": ["redo the calculation"]},
+            ],
+        }]
+        out = pr.diagnostic_snapshot(attempts)
+        first, second = out["concepts"]
+        assert first["last_demonstrated"] == "the rule is stated"
+        assert "last_concept_gap" not in first
+        assert second["last_execution_issue"] == "redo the calculation"
+        assert "last_concept_gap" not in second
+
+    def test_old_whole_item_verdict_is_not_assigned_to_each_concept(self):
+        out = pr.diagnostic_snapshot([{
+            "concept_ids": ["course.first", "course.second"],
+            "verdict": "fail", "failure_points": ["second part"]}])
+        assert out["concepts"] == []
+        assert out["older_multi_concept_items_without_attribution"] == 1
+        assert out["concepts_touched_by_unattributed_items"] == [
+            "course.first", "course.second"]
+
+    def test_later_success_clears_an_earlier_gap(self):
+        attempts = [
+            {"concept_ids": ["course.first"], "verdict": "fail",
+             "failure_points": ["missing rule"]},
+            {"concept_ids": ["course.first"], "verdict": "pass",
+             "evidence_quotes": ["the rule"]},
+        ]
+        row = pr.diagnostic_snapshot(attempts)["concepts"][0]
+        assert "last_concept_gap" not in row
+        assert row["last_demonstrated"] == "the rule"
+
 class TestTheWholeReport:
     def build(self, root, rows):
         fx.write_mastery(root, rows)

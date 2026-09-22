@@ -355,6 +355,57 @@ class Finding:
 
 def rule_attempt(att: dict, where: str) -> list:
     out = []
+    concept_ids = att.get("concept_ids") or []
+    results = att.get("concept_results")
+    if isinstance(results, list):
+        result_ids = [r.get("concept_id") for r in results
+                      if isinstance(r, dict)]
+        valid_ids = (len(result_ids) == len(results) == len(concept_ids)
+                     and all(isinstance(cid, str) for cid in result_ids + concept_ids)
+                     and len(set(result_ids)) == len(result_ids)
+                     and len(set(concept_ids)) == len(concept_ids)
+                     and sorted(result_ids) == sorted(concept_ids))
+        if not valid_ids:
+            out.append(Finding(
+                "ATT010", where,
+                "concept_results must name each concept exactly once; an "
+                "unassessed concept must say unassessed rather than inherit "
+                "the whole item's verdict"))
+        answer = (att.get("answer") or "") + " " + " ".join(
+            str(value) for value in (att.get("response_values") or {}).values())
+        answer = re.sub(r"\s+", " ", answer).strip().lower()
+        for result in results:
+            if not isinstance(result, dict):
+                continue
+            cid = result.get("concept_id")
+            if result.get("verdict") == "pass":
+                quotes = result.get("evidence_quotes") or []
+                if not quotes or any(not isinstance(q, str) or
+                                     re.sub(r"\s+", " ", q).strip().lower()
+                                     not in answer for q in quotes):
+                    out.append(Finding(
+                        "ATT011", where,
+                        "a pass for " + str(cid) + " needs quotes from that "
+                        "concept's actual answer"))
+            if result.get("verdict") == "unassessed" and (
+                    result.get("evidence_quotes") or result.get("failure_points")):
+                out.append(Finding(
+                    "ATT012", where,
+                    "unassessed " + str(cid) + " cannot carry pass or "
+                    "failure evidence"))
+            if len(concept_ids) > 1 and att.get("kind") != "probe" and \
+                    result.get("verdict") != "unassessed" and \
+                    not result.get("latency_rating"):
+                out.append(Finding(
+                    "ATT015", where,
+                    "rate recall for " + str(cid) + " separately; a hint "
+                    "on another concept must not affect it"))
+        if att.get("verdict") == "pass" and any(
+                r.get("verdict") != "pass" for r in results
+                if isinstance(r, dict)):
+            out.append(Finding(
+                "ATT013", where,
+                "the whole item cannot pass when a concept did not pass"))
     if att.get("verdict") == "pass" and not att.get("evidence_quotes"):
         out.append(Finding(
             "ATT001", where,

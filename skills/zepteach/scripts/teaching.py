@@ -154,6 +154,14 @@ def check_exposition(expo: dict, item_prompts=None,
                 "reads like teaching and is assessment")
 
     reached = sorted(set(int(r.get("rung", 0)) for r in rungs))
+    if expo.get("register") == "analogy_first" and not (
+            1 in reached or 2 in reached):
+        raise Refused(
+            "EXP006",
+            "this explanation is marked intuition-first but contains no "
+            "phenomenon or intuitive picture",
+            "show what the idea is for or what it looks like before the "
+            "formal statement. A named register must change the teaching")
     start = REGISTER_START.get(expo.get("register"))
     below = [r for r in reached if start and r < start]
 

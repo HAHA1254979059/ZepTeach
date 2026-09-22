@@ -196,16 +196,19 @@ def worth_wiring(tool: dict, uses: int = 0) -> dict:
                        "before building anything"}
 
     if runnable:
-        return {"tool_id": tid, "build": "skill",
-                "why": "there is a procedure worth writing down and the "
-                       "plugin can run it, so the steps and the checks "
-                       "belong in one place instead of being reconstructed "
-                       "each lesson"}
+        return {"tool_id": tid, "build": "check_existing",
+                "if_missing": "skill",
+                "why": "there is a procedure worth capturing. Check the "
+                       "host, installed plugins, MCP servers and skills "
+                       "first; create a project skill only if none already "
+                       "supports the teaching task"}
 
-    return {"tool_id": tid, "build": "skill",
-            "why": "the learner runs it themselves, but what they know about "
-                   "using it well is worth capturing so it survives being "
-                   "forgotten"}
+    return {"tool_id": tid, "build": "check_existing",
+            "if_missing": "skill",
+            "why": "the learner runs it themselves, but their procedure "
+                   "is worth keeping. Check existing integrations first; "
+                   "if none fits, capture the steps in a project skill so "
+                   "they survive being forgotten"}
 
 
 def review(doc: dict) -> list:
@@ -341,9 +344,13 @@ def cmd_review(args) -> int:
         print("no tools recorded for this course")
         return zs.EXIT_OK
     for r in rows:
-        verdict = r["build"] or "nothing"
+        verdict = ("check existing capabilities first" if
+                   r["build"] == "check_existing" else
+                   r["build"] or "nothing")
         print(str(r["tool_id"]) + "  ->  " + verdict)
         print("    " + r["why"])
+        if r.get("if_missing"):
+            print("    if none fits: " + r["if_missing"])
     print("")
     print("Anything written into the learner's project is shown to them "
           "first.")

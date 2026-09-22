@@ -48,6 +48,23 @@ def test_multipart_probe_keeps_named_inputs_and_escapes_script_end():
     assert "dot: 点积" in fallback and "norm: 模长" in fallback
 
 
+def test_notation_and_compact_grid_survive_exercise_conversion():
+    source = {"exercise_id": "e", "prompt": r"Find \(x^2\)",
+              "answer_key": "private answer",
+              "response": {"mode": "fill_blanks", "fields": [
+                  {"field_id": "formula", "label": "Expression",
+                   "expects_notation": True, "symbols": ["^", "="]},
+                  {"field_id": "grid", "label": "Grid",
+                   "grid": {"rows": 2, "columns": 2}}]}}
+    shown = it.from_exercise(source)
+    assert it.validate_request(shown) == []
+    page = it.inline_html(shown)
+    assert "private answer" not in page
+    assert "zt-keypad" in page and "MathJax" in page
+    assert shown["response"]["fields"][1]["grid"] == {
+        "rows": 2, "columns": 2}
+
+
 def test_invalid_choice_or_unnamed_part_is_refused_before_rendering():
     bad_choice = {"request_id": "x", "prompt": "Choose",
                   "response": {"mode": "choice", "options": [

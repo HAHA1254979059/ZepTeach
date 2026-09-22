@@ -67,6 +67,59 @@ class TestNothingIsIssuedWithoutAWayToMarkIt:
         assert ex.check_issuable(item())["ok"]
 
 
+class TestAnExecutionSlipDoesNotStartAFullRetestLoop:
+    def test_same_session_same_concept_is_refused(self):
+        previous = {"session_id": "session-one",
+                    "concept_ids": [fx.EIGENVALUE],
+                    "execution_only": True, "verdict": "partial"}
+        r = refusal(lambda: ex.check_retry_after_slip(
+            item(session_id="session-one"), [previous]))
+        assert r.code == "EXE030"
+        assert "move to the next concept" in r.suggestion
+
+    def test_an_explicit_learner_request_can_repeat(self):
+        previous = {"session_id": "session-one",
+                    "concept_ids": [fx.EIGENVALUE],
+                    "execution_only": True}
+        doc = item(session_id="session-one", learner_requested_repeat=True,
+                   repeat_reason="I want another full example")
+        ex.check_retry_after_slip(doc, [previous])
+
+    def test_new_session_or_new_concept_can_continue(self):
+        previous = {"session_id": "session-one",
+                    "concept_ids": [fx.EIGENVALUE],
+                    "execution_only": True}
+        ex.check_retry_after_slip(item(session_id="session-two"), [previous])
+        ex.check_retry_after_slip(item(session_id="session-one",
+                                       concept_ids=[fx.SHARED]), [previous])
+
+    def test_only_slipped_part_is_blocked(self):
+        previous = {"session_id": "session-one",
+                    "concept_ids": [fx.EIGENVALUE, fx.SHARED],
+                    "concept_results": [
+                        {"concept_id": fx.EIGENVALUE, "verdict": "pass"},
+                        {"concept_id": fx.SHARED, "verdict": "partial",
+                         "execution_only": True}]}
+        ex.check_retry_after_slip(item(session_id="session-one",
+                                       concept_ids=[fx.EIGENVALUE]), [previous])
+        assert refusal(lambda: ex.check_retry_after_slip(
+            item(session_id="session-one", concept_ids=[fx.SHARED]),
+            [previous])).code == "EXE030"
+
+    def test_issue_command_does_not_keep_the_refused_repeat(self, root):
+        course_dir = root / "courses" / "linear-algebra"
+        zs.append_jsonl(course_dir / "attempts.jsonl", {
+            "session_id": "session-one", "concept_ids": [fx.EIGENVALUE],
+            "execution_only": True, "verdict": "partial"})
+        candidate = root / "candidate.json"
+        candidate.write_text(json.dumps(item(session_id="session-one")),
+                             encoding="utf-8")
+        code = ex.main(["issue", "--root", str(root), "--course",
+                        "linear-algebra", "--file", str(candidate)])
+        assert code == zs.EXIT_GATE
+        assert zs.read_jsonl(course_dir / "exercises.jsonl") == []
+
+
 class TestDifficultyComesFromOutside:
     def test_an_anchored_item_must_name_its_source(self):
         """An anchored item whose source cannot be named is an item this

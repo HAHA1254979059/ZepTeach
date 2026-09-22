@@ -46,6 +46,25 @@
       },
       "description": "Globally unique namespaced concept ids."
     },
+    "concept_results": {
+      "type": "array",
+      "description": "One independent result for each concept on a multi-concept item. Historical attempts without this field remain readable, but new multi-concept attempts cannot be recorded without it. A wrong part must not lower an unrelated concept.",
+      "items": {
+        "type": "object",
+        "required": ["concept_id", "verdict"],
+        "additionalProperties": false,
+        "properties": {
+          "concept_id": {"type": "string", "minLength": 1},
+          "verdict": {"enum": ["pass", "partial", "fail", "unassessed"]},
+          "evidence_quotes": {"type": "array", "items": {"type": "string", "minLength": 1}},
+          "failure_points": {"type": "array", "items": {"type": "string"}},
+          "execution_only": {"type": "boolean"},
+          "latency_rating": {"enum": ["instant", "fluent", "effortful", "recovered_with_hint"]},
+          "latency_source": {"enum": ["inferred", "learner_stated", "learner_corrected"]},
+          "depth_demonstrated": {"type": "integer", "minimum": 1, "maximum": 5}
+        }
+      }
+    },
     "kind": {
       "enum": [
         "probe",
@@ -80,8 +99,10 @@
       "enum": [
         "pass",
         "partial",
-        "fail"
-      ]
+        "fail",
+        "unassessed"
+      ],
+      "description": "unassessed means the submitted work was not reliably judged, for example when a valid alternative route is outside the rubric or the input was unreadable. Keep the answer without changing mastery."
     },
     "score": {
       "type": "number"

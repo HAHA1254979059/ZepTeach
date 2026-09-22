@@ -37,7 +37,8 @@ def from_exercise(item: dict) -> dict:
     shown = {"mode": response.get("mode")}
     if response.get("fields"):
         shown["fields"] = [
-            {key: field[key] for key in ("field_id", "label", "hint")
+            {key: field[key] for key in ("field_id", "label", "hint",
+                                        "expects_notation", "symbols", "grid")
              if key in field}
             for field in response["fields"]
         ]
@@ -47,6 +48,9 @@ def from_exercise(item: dict) -> dict:
              if key in option}
             for option in response["options"]
         ]
+    for key in ("expects_notation", "symbols"):
+        if key in response:
+            shown[key] = response[key]
     return {"request_id": item.get("exercise_id"),
             "prompt": item.get("prompt"), "response": shown}
 
@@ -90,6 +94,22 @@ def validate_request(request: dict) -> list[str]:
             errors.append("each field needs an id and label")
         elif len(set(ids)) != len(ids):
             errors.append("field ids must be unique")
+        for field in fields:
+            if not isinstance(field, dict):
+                continue
+            grid = field.get("grid")
+            if grid is not None and (not isinstance(grid, dict) or
+                    any(not isinstance(grid.get(key), int) or grid[key] < 1
+                        for key in ("rows", "columns"))):
+                errors.append("grid needs positive rows and columns")
+            symbols = field.get("symbols")
+            if symbols is not None and (not isinstance(symbols, list) or
+                    any(not isinstance(s, str) or not s for s in symbols)):
+                errors.append("symbols must be nonempty strings")
+    symbols = response.get("symbols")
+    if symbols is not None and (not isinstance(symbols, list) or
+            any(not isinstance(s, str) or not s for s in symbols)):
+        errors.append("symbols must be nonempty strings")
     return errors
 
 
@@ -118,21 +138,31 @@ def inline_html(request: dict) -> str:
     data = json.dumps(request, ensure_ascii=False).replace("<", "\\u003c")
     return """<div id="zepteach-input" role="group" aria-label="学习回答"></div>
 <style>
-#zepteach-input { color: var(--foreground); max-width: 100%; }
+#zepteach-input { color: var(--foreground, CanvasText); max-width: 100%; }
 #zepteach-input .zt-prompt { white-space: pre-wrap; margin: 0 0 12px; }
 #zepteach-input .zt-field { display: block; margin: 10px 0; }
 #zepteach-input .zt-field span { display: block; margin-bottom: 4px; }
 #zepteach-input input[type=text], #zepteach-input input[type=number],
 #zepteach-input textarea { box-sizing: border-box; width: 100%; padding: 8px;
-  color: var(--foreground); background: var(--background);
-  border: 1px solid var(--border); border-radius: 6px; font: inherit; }
+  color: var(--foreground, CanvasText); background: var(--background, Canvas);
+  border: 1px solid var(--border, ButtonBorder); border-radius: 6px; font: inherit; }
 #zepteach-input textarea { min-height: 96px; resize: vertical; }
 #zepteach-input .zt-choice { display: block; margin: 8px 0; }
 #zepteach-input .zt-choice input { margin-right: 8px; }
+#zepteach-input .zt-grid { display: grid; gap: 6px; width: 100%; margin: 6px 0; }
+#zepteach-input .zt-grid input { text-align: center; }
+#zepteach-input .zt-keypad { display: grid; grid-template-columns: repeat(4, 42px);
+  gap: 5px; width: max-content; max-width: 100%; margin: 8px 0 14px; }
+#zepteach-input .zt-symbols { display: flex; flex-wrap: wrap; gap: 5px;
+  max-width: 360px; margin: 8px 0 14px; }
+#zepteach-input .zt-keypad button, #zepteach-input .zt-symbols button {
+  margin: 0; min-height: 38px; padding: 5px 8px; color: var(--foreground, ButtonText);
+  background: var(--secondary, ButtonFace); border: 1px solid var(--border, ButtonBorder);
+  border-radius: 6px; font: inherit; }
 #zepteach-input button { margin-top: 10px; padding: 7px 12px;
-  color: var(--primary-foreground); background: var(--primary);
-  border: 0; border-radius: 6px; font: inherit; }
-#zepteach-input .zt-status { margin-top: 8px; color: var(--muted-foreground); }
+  color: var(--primary-foreground, ButtonText); background: var(--primary, ButtonFace);
+  border: 1px solid var(--border, ButtonBorder); border-radius: 6px; font: inherit; }
+#zepteach-input .zt-status { margin-top: 8px; color: var(--muted-foreground, GrayText); }
 </style>
 <script>
 (() => {
@@ -146,22 +176,84 @@ def inline_html(request: dict) -> str:
   const mode = spec.response.mode;
   const fields = spec.response.fields || [];
   const saved = window.openai?.widgetState?.privateContent?.draft || {};
-  function field(id, label, kind, hint) {
+  let activeInput = null;
+  function insert(target, value) {
+    if (!target) return;
+    target.focus();
+    const start = target.selectionStart ?? target.value.length;
+    const end = target.selectionEnd ?? start;
+    target.setRangeText(value, start, end, 'end');
+    target.dispatchEvent(new Event('input', {bubbles: true}));
+  }
+  function controls(targets, symbols, gridMode) {
+    const pad = document.createElement('div');
+    pad.className = gridMode ? 'zt-keypad' : 'zt-symbols';
+    const keys = gridMode ? ['1','2','3','删','4','5','6','−',
+      '7','8','9','.','(', '0', ')', '+'] : symbols;
+    keys.forEach(symbol => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = symbol;
+      button.setAttribute('aria-label', symbol === '删' ? '删除一个字符' : '输入 ' + symbol);
+      button.addEventListener('click', () => {
+        const target = targets.includes(activeInput) ? activeInput : targets[0];
+        if (symbol === '删') {
+          if (!target) return;
+          target.focus();
+          const end = target.selectionEnd ?? target.value.length;
+          const start = target.selectionStart === end ? Math.max(0, end - 1) : target.selectionStart;
+          target.setRangeText('', start, end, 'end');
+          target.dispatchEvent(new Event('input', {bubbles: true}));
+        } else insert(target, symbol === '−' ? '-' : symbol);
+      });
+      pad.appendChild(button);
+    });
+    form.appendChild(pad);
+  }
+  function field(id, label, kind, hint, notation, symbols, shape) {
     const wrap = document.createElement('label');
     wrap.className = 'zt-field';
     const title = document.createElement('span');
     title.textContent = label;
+    wrap.appendChild(title);
+    if (shape) {
+      const grid = document.createElement('div');
+      grid.className = 'zt-grid';
+      grid.style.maxWidth = Math.min(shape.columns * 88, 560) + 'px';
+      grid.style.gridTemplateColumns = 'repeat(' + shape.columns + ', minmax(0, 1fr))';
+      const targets = [];
+      for (let row = 1; row <= shape.rows; row++) {
+        for (let col = 1; col <= shape.columns; col++) {
+          const cell = document.createElement('input');
+          cell.type = 'text';
+          cell.inputMode = 'decimal';
+          cell.name = id + '.r' + row + 'c' + col;
+          cell.setAttribute('aria-label', label + ' 第' + row + '行第' + col + '列');
+          cell.required = true;
+          if (saved[cell.name]) cell.value = saved[cell.name];
+          cell.addEventListener('focus', () => {activeInput = cell;});
+          grid.appendChild(cell);
+          targets.push(cell);
+        }
+      }
+      wrap.appendChild(grid);
+      form.appendChild(wrap);
+      controls(targets, [], true);
+      return;
+    }
     const input = document.createElement(kind === 'free_text' ? 'textarea' : 'input');
     if (input.tagName === 'INPUT') {
-      input.type = kind === 'numeric' ? 'number' : 'text';
-      if (kind === 'numeric') input.step = 'any';
+      input.type = notation ? 'text' : kind === 'numeric' ? 'number' : 'text';
+      if (kind === 'numeric' && !notation) input.step = 'any';
     }
     input.name = id;
     input.required = true;
     if (hint) input.placeholder = hint;
     if (saved[id]) input.value = saved[id];
-    wrap.append(title, input);
+    input.addEventListener('focus', () => {activeInput = input;});
+    wrap.appendChild(input);
     form.appendChild(wrap);
+    if (notation) controls([input], symbols || ['+','−','×','÷','=','(',')','^','_','√','Σ'], false);
   }
   if (mode === 'choice') {
     spec.response.options.forEach((option, i) => {
@@ -178,9 +270,11 @@ def inline_html(request: dict) -> str:
     });
   } else if (fields.length) {
     fields.forEach(f => field(f.field_id, f.label,
-      mode === 'numeric' ? 'numeric' : mode === 'free_text' ? 'free_text' : 'text', f.hint));
+      mode === 'numeric' ? 'numeric' : mode === 'free_text' ? 'free_text' : 'text',
+      f.hint, !!(f.expects_notation || f.symbols), f.symbols, f.grid));
   } else {
-    field('answer', '你的回答', mode);
+    field('answer', '你的回答', mode, '', !!spec.response.expects_notation,
+      spec.response.symbols);
   }
   const submit = document.createElement('button');
   submit.type = 'submit';
@@ -190,6 +284,12 @@ def inline_html(request: dict) -> str:
   status.setAttribute('role', 'status');
   form.append(submit, status);
   root.appendChild(form);
+  if (spec.prompt.includes('\\\\(') || spec.prompt.includes('\\\\[')) {
+    const math = document.createElement('script');
+    math.src = 'https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js';
+    math.onload = () => window.MathJax?.typesetPromise?.([prompt]).catch(() => {});
+    document.head.appendChild(math);
+  }
   if (!window.openai?.sendFollowUpMessage) {
     submit.disabled = true;
     status.textContent = '此客户端无法提交内联回答。请在对话中发送答案。';

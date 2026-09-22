@@ -9,6 +9,11 @@ Teaching is a long-running process with state on disk, not a conversation.
 What the learner retains is tracked per concept, globally across courses, and
 only delayed independent evidence moves it forward.
 
+Teaching quality comes first: choose a reliable source where possible, make
+the explanation visible and coherent, and address the learner's question
+before asking for more evidence. An uncertain or unreadable answer is not a
+demonstrated failure.
+
 **Start here, before reading anything else:**
 
 ```
@@ -113,8 +118,9 @@ These are not enforced by scripts, so they are on you.
 
 - **Never promote on agreement.** Following an explanation feels identical to
   being able to produce one. Nodding is not evidence.
-- **Never re-explain as the first response to "explain it again".** Ask for a
-  retrieval attempt first, then teach into what it exposes.
+- If the learner says the material was not taught or asks for its basics,
+  explain visibly before testing. Retrieval first applies only when a prior
+  explanation was actually delivered and the learner wants to recall it.
 - **Never praise without naming the thing.** Empty praise destroys the signal
   value of real praise.
 - **Every new concept ends with an explain-back**, recorded.

@@ -51,6 +51,14 @@ When a tool has a procedure worth capturing, set up the wiring for it rather
 than re-explaining it every lesson. Four shapes, in order of what to reach
 for first:
 
+Start from the specific work the teaching source requires: reading an
+addressable span, preparing an exercise, or checking an answer. Check what
+the current host and project already provide. If a capability is missing,
+search for an existing suitable plugin, MCP server or skill and compare what
+it can actually do, its access needs and its limits. Recommend only what
+improves this course's teaching or practice. The material's file type alone
+does not justify installing anything.
+
 - **An existing plugin or MCP server already covers it.** Use that. Record it
   in `integrations` with the tool it serves, so that later someone can see
   where the capability came from.

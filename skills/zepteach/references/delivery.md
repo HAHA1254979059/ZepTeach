@@ -7,8 +7,11 @@
 
 ## Deliver it in pieces the learner asks for
 
-**Never send a lesson's worth of explanation in one message.** Say one thing,
-stop, and let them start the next piece.
+**Do not send a lesson's worth of explanation in one message.** Deliver one
+coherent idea, with enough purpose, definition and concrete detail to make
+it understandable, then let the learner start the next piece. One piece can
+take several paragraphs and a worked example. A single sentence followed by
+a question is not a teaching segment merely because it is short.
 
 The evidence is specific about the mechanism. Segments the learner advances
 themselves, against the same material delivered continuously, was supported
@@ -18,15 +21,17 @@ next piece arrives**, not from the pieces being small. Chopping the output
 finely and then sending every piece in one message implements the appearance
 and none of the mechanism.
 
-Each piece ends with something they answer:
+Each piece ends with something they can respond to:
 
-- A question about what was just said. The default: it hands over the pacing
-  and produces a retrieval attempt at once, and retrieval is the
-  highest-utility thing available.
+- An invitation to point out the step or term that remains unclear. Use this
+  after new or repaired teaching before scored practice. If nothing is
+  unclear, continue to one small exercise.
+- A short question about what was just said when the learner has already had
+  enough explanation and is ready to try retrieval.
 - Occasionally a choice of direction.
 
-**"Shall I go on?" does not count.** Answered yes by reflex, establishes
-nothing.
+Do not treat "I follow" or "go on" as evidence of mastery. It controls the
+pace, not the score.
 
 ### How much is one piece
 

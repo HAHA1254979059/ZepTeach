@@ -26,6 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import migrate as mg  # noqa: E402
 import review as rv  # noqa: E402
+import sources as sr  # noqa: E402
 import teaching as tp  # noqa: E402
 import zt_state as zs  # noqa: E402
 from constants import BYPASS_WARNING_COUNT  # noqa: E402
@@ -122,11 +123,13 @@ def register_for(profile: dict, domain: str) -> dict:
 
 
 def background_for(profile: dict, domain: str):
+    best = None
     for e in profile.get("background", []) or []:
         d = e.get("domain", "")
         if domain == d or (domain or "").startswith(d + "/"):
-            return e
-    return None
+            if best is None or len(d) > len(best.get("domain", "")):
+                best = e
+    return best
 
 
 # --------------------------------------------------------------------------
@@ -346,6 +349,36 @@ def cmd_register(args) -> int:
     return zs.EXIT_OK
 
 
+def cmd_set_register(args) -> int:
+    root = _root(args)
+    path = root / "learner" / "profile.json"
+    if not path.exists():
+        print("learner profile not found", file=sys.stderr)
+        return zs.EXIT_NOT_FOUND
+    profile = zs.read_json(path)
+    entries = list(profile.get("registers") or [])
+    entry = next((dict(e) for e in entries
+                  if e.get("domain") == args.domain),
+                 {"domain": args.domain})
+    entry["register"] = args.register
+    entry["basis"] = args.because
+    entry["updated"] = rv._iso(rv._utcnow())
+    if args.max_analogies is not None:
+        entry["max_analogies_per_concept"] = args.max_analogies
+    if args.formalism_tolerance is not None:
+        entry["formalism_tolerance"] = args.formalism_tolerance
+    profile["registers"] = [e for e in entries
+                            if e.get("domain") != args.domain] + [entry]
+    errors = zs.validate_doc(profile, "profile")
+    if errors:
+        for error in errors:
+            print("invalid profile: " + str(error), file=sys.stderr)
+        return zs.EXIT_VALIDATION
+    zs.atomic_write_json(path, profile)
+    print("register for " + args.domain + " -> " + args.register)
+    return zs.EXIT_OK
+
+
 def cmd_get(args) -> int:
     rows = load_mastery(_root(args))
     row = next((r for r in rows if r.get("concept_id") == args.concept), None)
@@ -457,7 +490,17 @@ def cmd_teach(args) -> int:
         prompts = [it.get("prompt") for it in _items_on(cdir, cid)
                    if it.get("prompt")]
 
-    reg = register_for(get_profile(root), course.get("domain"))
+    concept_domain = (zs.load_registry(root).get(cid) or {}).get("domain")
+    reg = register_for(get_profile(root), concept_domain or
+                       course.get("domain"))
+    if expo.get("register") != reg.get("register"):
+        print("GATE FAILED: explanation register " +
+              str(expo.get("register")) + " does not match the stored "
+              "setting " + str(reg.get("register")) + " for " +
+              str(concept_domain or course.get("domain")) +
+              ". Use learner.py set-register with the learner's reason "
+              "before teaching at a different level.", file=sys.stderr)
+        return zs.EXIT_GATE
     try:
         checked = tp.check_exposition(
             expo, prompts,
@@ -468,6 +511,33 @@ def cmd_teach(args) -> int:
         if r.suggestion:
             print("instead: " + r.suggestion, file=sys.stderr)
         return zs.EXIT_GATE
+
+    source_citation = None
+    if course.get("source_anchored"):
+        span = (les or {}).get("source_span")
+        if not span and les is not None:
+            for concept in les.get("concepts") or []:
+                if concept.get("concept_id") == cid:
+                    span = concept.get("source_span")
+                    break
+        if not span:
+            print("GATE FAILED: this course is source-anchored but this "
+                  "concept has no mapped teaching span", file=sys.stderr)
+            return zs.EXIT_GATE
+        try:
+            mapped = sr.span_for(sr.load(root, args.course), span)
+        except Refused as r:
+            print("REFUSED [" + r.code + "]  " + r.message,
+                  file=sys.stderr)
+            return zs.EXIT_GATE
+        source_id = mapped["source_id"]
+        if source_id not in (expo.get("sources") or []):
+            print("GATE FAILED: the explanation does not name mapped "
+                  "source " + str(source_id) + ". Read its span and record "
+                  "that source before claiming this was source-anchored "
+                  "teaching", file=sys.stderr)
+            return zs.EXIT_GATE
+        source_citation = mapped["cite_as"]
 
     when = expo.get("delivered_at") or args.at or rv._iso(rv._utcnow())
     expo.setdefault("delivered_at", when)
@@ -498,6 +568,8 @@ def cmd_teach(args) -> int:
         return zs.EXIT_VALIDATION
 
     print(cid + ": " + what)
+    if source_citation:
+        print("  source " + source_citation)
     print("  rungs " + ", ".join(str(r) for r in checked["rungs_covered"]))
     if checked["note"]:
         print("  note: " + checked["note"])
@@ -514,6 +586,11 @@ def cmd_record(args) -> int:
     findings = [zs.Finding("SCHEMA", "attempt", e)
                 for e in zs.validate_doc(att, "attempt")]
     findings.extend(zs.rule_attempt(att, "attempt"))
+    if len(att.get("concept_ids") or []) > 1 and not att.get("concept_results"):
+        findings.append(zs.Finding(
+            "ATT014", "attempt",
+            "a new multi-concept attempt needs one independent result per "
+            "concept; a whole-item verdict cannot be copied to all of them"))
     if any(f.severity == "error" for f in findings):
         print("refusing to record: the attempt does not hold up",
               file=sys.stderr)
@@ -535,8 +612,12 @@ def cmd_record(args) -> int:
     # what was said and have to say it somewhere other than inside the
     # questions. A probe is still exempt: being asked something untaught is
     # what a probe is for.
+    by_result = {r["concept_id"]: r
+                 for r in (att.get("concept_results") or [])}
+    assessed = [cid for cid in att.get("concept_ids", [])
+                if by_result.get(cid, att).get("verdict") != "unassessed"]
     untaught = tp.untaught_in(load_expositions(root),
-                              att.get("concept_ids", []),
+                              assessed,
                               att.get("submitted_at") or "",
                               att.get("kind"),
                               exempt=mg.grandfathered(root))
@@ -551,26 +632,31 @@ def cmd_record(args) -> int:
 
     changed = []
     for cid in att.get("concept_ids", []):
+        result = by_result.get(cid, att)
+        if result.get("verdict") == "unassessed":
+            continue
         row = ensure_row(rows, cid, course_id,
                          depth_target_in(curriculum, cid))
         ev = {"attempt_id": att.get("attempt_id"), "course_id": course_id,
-              "kind": att.get("kind"), "verdict": att.get("verdict"),
+              "kind": att.get("kind"), "verdict": result.get("verdict"),
               "date": att.get("submitted_at")}
         if att.get("tier"):
             ev["tier"] = att["tier"]
-        if att.get("latency_rating"):
-            ev["latency_rating"] = att["latency_rating"]
-            ev["latency_source"] = att.get("latency_source", "inferred")
+        rating = result.get("latency_rating", att.get("latency_rating"))
+        if rating:
+            ev["latency_rating"] = rating
+            ev["latency_source"] = result.get(
+                "latency_source", att.get("latency_source", "inferred"))
         if att.get("graded_by"):
             ev["graded_by"] = att["graded_by"]
-        if att.get("execution_only"):
+        if result.get("execution_only"):
             ev["execution_only"] = True
         before = row.get("state")
         updated = rv.apply_evidence(row, ev, min_days)
 
         # depth only counts when the answer was actually right
-        shown = att.get("depth_demonstrated")
-        if isinstance(shown, int) and att.get("verdict") == "pass":
+        shown = result.get("depth_demonstrated", att.get("depth_demonstrated"))
+        if isinstance(shown, int) and result.get("verdict") == "pass":
             updated["depth_reached"] = max(
                 int(updated.get("depth_reached") or 0), shown)
 
@@ -591,6 +677,8 @@ def cmd_record(args) -> int:
         return zs.EXIT_VALIDATION
 
     zs.append_jsonl(cdir / "attempts.jsonl", att)
+    if not changed:
+        print("attempt kept without a mastery change; no concept was assessed")
     for c in changed:
         arrow = c["from"] + " -> " + c["to"] if c["from"] != c["to"] \
             else "stays " + str(c["to"])
@@ -646,6 +734,16 @@ def build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("register")
     sp.add_argument("--domain", required=True)
     sp.set_defaults(func=cmd_register)
+
+    sp = sub.add_parser("set-register", help="change how one field is taught")
+    sp.add_argument("--domain", required=True)
+    sp.add_argument("--register", required=True,
+                    choices=["terse_technical", "technical_with_gloss",
+                             "analogy_first"])
+    sp.add_argument("--because", required=True)
+    sp.add_argument("--max-analogies", type=int)
+    sp.add_argument("--formalism-tolerance", type=int)
+    sp.set_defaults(func=cmd_set_register)
 
     sp = sub.add_parser("get")
     sp.add_argument("--concept", required=True)

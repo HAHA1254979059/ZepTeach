@@ -92,7 +92,7 @@ class TestASlipIsNotAGap:
         got = grade.failure_kind(self.verdict(), self.rubric())
         assert got["execution_only"] is True
         assert got["unmet_execution"] == ["arithmetic"]
-        assert "redo that step" in got["what_to_do"]
+        assert "one local correction" in got["what_to_do"]
 
     def test_a_real_gap_is_not_dressed_up_as_a_slip(self):
         got = grade.failure_kind(self.verdict(method=False), self.rubric())
@@ -116,16 +116,44 @@ class TestASlipIsNotAGap:
                                      taught, now, {}, "fluent",
                                      execution_only=True)
         assert slipped == "practiced"
-        assert "redo that step" in why
+        assert "otherwise move on" in why
         gap, _ = rv.next_state("practiced", "delayed_retest", "fail",
                                taught, now, {}, "fluent")
         assert gap == "shaky"
 
+    def test_a_failed_inclass_item_does_not_erase_delayed_evidence(self):
+        from datetime import datetime, timezone
+        taught = datetime(2026, 9, 1, tzinfo=timezone.utc)
+        now = datetime(2026, 9, 20, tzinfo=timezone.utc)
+        state, _ = rv.next_state("consolidating", "inclass", "fail",
+                                 taught, now, {})
+        assert state == "consolidating"
+        base = fx.mastery(state="consolidating", scheduling={
+            "algorithm": "sm2", "interval_days": 12.0, "reps": 3,
+            "ease": 2.5, "next_due": "2026-10-01T10:00:00+00:00"})
+        before = dict(base["scheduling"])
+        after = rv.apply_evidence(base, {
+            "attempt_id": "inclass-miss", "course_id": "linalg",
+            "kind": "inclass", "verdict": "fail",
+            "date": "2026-09-20T10:00:00+00:00"}, {})
+        assert after["state"] == "consolidating"
+        assert after["scheduling"] == before
+
     def test_a_slip_does_not_shorten_the_next_interval_either(self):
         """The scheduling half of the same mistake: a retest they did not
         need, and sooner than the one they did."""
-        assert rv.grade_of("fail", "fluent", execution_only=True) > \
-            rv.grade_of("fail", "fluent")
+        base = fx.mastery(state="practiced", scheduling={
+            "algorithm": "sm2", "interval_days": 12.0, "reps": 3,
+            "ease": 2.5, "next_due": "2026-10-01T10:00:00+00:00"})
+        before = dict(base["scheduling"])
+        after = rv.apply_evidence(base, {
+            "attempt_id": "slip", "course_id": "linalg",
+            "kind": "delayed_retest", "verdict": "fail",
+            "date": "2026-09-20T10:00:00+00:00",
+            "latency_rating": "fluent", "execution_only": True}, {})
+        assert after["state"] == "practiced"
+        assert after["scheduling"] == before
+        assert after["evidence"][-1]["execution_only"] is True
 
     def test_it_does_not_promote_either(self):
         from datetime import datetime, timezone

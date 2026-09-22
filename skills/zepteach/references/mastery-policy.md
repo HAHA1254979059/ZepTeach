@@ -167,3 +167,8 @@ delay, and this was not a clean answer.
 
 `assessment-rubrics.md` has how the distinction is made and what stops it
 becoming a way of being kind.
+
+A whole-item failure on a multi-concept exercise is not a verdict on every
+concept it names. New attempts carry one result per concept; an unassessed
+part changes nothing. Progress reports show recent demonstrated strengths,
+concept gaps and execution issues separately from the strict mastery state.

@@ -29,6 +29,18 @@
     "lesson_id": {
       "type": "string"
     },
+    "session_id": {
+      "type": "string",
+      "description": "The active learning session. Used to stop a same-session execution slip from triggering another full item on the same concept."
+    },
+    "learner_requested_repeat": {
+      "type": "boolean",
+      "description": "True only when the learner explicitly asks for another full item after a same-session execution slip."
+    },
+    "repeat_reason": {
+      "type": "string",
+      "description": "The learner's reason for asking to repeat; required when learner_requested_repeat is true."
+    },
     "concept_ids": {
       "type": "array",
       "minItems": 1,
@@ -204,6 +216,21 @@
               "expects_notation": {
                 "type": "boolean",
                 "description": "True when answering this slot means writing something ordinary prose typing handles badly."
+              },
+              "symbols": {
+                "type": "array",
+                "items": {"type": "string", "minLength": 1},
+                "description": "Optional symbols useful for this slot's notation controls. Chosen for the item, not imposed by the core."
+              },
+              "grid": {
+                "type": "object",
+                "required": ["rows", "columns"],
+                "additionalProperties": false,
+                "properties": {
+                  "rows": {"type": "integer", "minimum": 1},
+                  "columns": {"type": "integer", "minimum": 1}
+                },
+                "description": "A compact labeled cell grid for a table or matrix answer. The learner can also use the normal keyboard."
               }
             }
           }
@@ -238,6 +265,11 @@
         "expects_notation": {
           "type": "boolean",
           "description": "True when answering this item at all requires notation - a formula, a structure, a diagram, a table, non-Latin script. Checked against how this learner said they can supply notation."
+        },
+        "symbols": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "description": "Optional symbols for a single notation answer."
         },
         "why": {
           "type": "string",

@@ -101,6 +101,14 @@
             "type": "integer",
             "minimum": 1,
             "maximum": 5
+          },
+          "basis": {
+            "type": "string",
+            "description": "Why this domain needs this register, preferably the learner's own words."
+          },
+          "updated": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       }

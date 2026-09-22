@@ -1,0 +1,11 @@
+{
+  "request_id": "layout-check",
+  "prompt": "Explain \\(x^2\\) and fill the grid.",
+  "response": {
+    "mode": "fill_blanks",
+    "fields": [
+      {"field_id": "formula", "label": "Expression", "expects_notation": true},
+      {"field_id": "grid", "label": "Grid", "grid": {"rows": 2, "columns": 2}}
+    ]
+  }
+}

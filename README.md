@@ -35,6 +35,17 @@ criterion it marks as met, it quotes the words that met it, and those quotes
 are checked against the submitted answer. A criterion nothing can be quoted
 for was not met.
 
+**One error does not describe every ability.** A multi-concept answer has a
+separate result for each concept. A calculation slip can call for one local
+correction without lowering the concept or starting another full test. An
+answer that cannot be judged is kept as unassessed, not counted as failure.
+
+**Teaching has a source when one is available.** Course setup proposes a
+reliable primary resource that fits the learner's goal and maps lessons to
+specific sections. An anchored explanation must name its mapped, readable
+source. When the source and an explanation disagree, the lesson pauses for
+verification and an explicit correction.
+
 **Difficulty comes from outside.** The hardest tier of every exercise is a
 real problem someone else set, cited precisely. A system that invents all its
 own problems calibrates difficulty against what it expects you to manage, and
@@ -53,9 +64,9 @@ on?".
 **Answering should not get in the way of thinking.** Session condition,
 prerequisite checks, and exercises share one input contract. When the host
 supports conversation-inline controls, ZepTeach can show choices and named
-answer fields there. Otherwise it presents the same fields in text. A shorter
-input is used only when it still shows the understanding the question asks
-for.
+answer fields there, including compact notation controls and cell grids.
+Otherwise it presents the same fields in text. A shorter input is used only
+when it still shows the understanding the question asks for.
 
 **Every number says where it came from.** Forty-seven tunable values, each
 marked as supported by evidence, borrowed from an established tool, an

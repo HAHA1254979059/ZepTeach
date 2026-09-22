@@ -78,6 +78,15 @@ class TestAnExplanationHasToSayWhatWasSaid:
         assert got["started_below_register"] == [1]
         assert "register is wrong" in got["note"]
 
+    def test_intuition_first_must_actually_supply_intuition(self):
+        r = refusal(lambda: tp.check_exposition(
+            fx.exposition(register="analogy_first")))
+        assert r.code == "EXP006"
+        good = fx.exposition(register="analogy_first", rungs=[
+            {"rung": 1, "said": "The problem this solves is visible here."},
+            {"rung": 4, "said": "Here is the formal rule."}])
+        assert tp.check_exposition(good)["ok"]
+
 
 class TestAnExplanationMustExistOutsideTheQuestions:
     """The one that catches what actually happened.

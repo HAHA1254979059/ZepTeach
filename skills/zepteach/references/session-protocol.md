@@ -58,6 +58,10 @@ learner.py probe --course <slug> --lesson <id>
   separate named inputs using `interaction.py request`. Not a test — a
   check that the ground is where the model thinks it is. Record the results
   as attempts with `kind: probe`; probes never move state.
+- If the learner has already said a prerequisite or target is unfamiliar,
+  do not use a probe to rediscover that declaration. Start teaching at the
+  missing foundation. Probe only other prerequisites whose state is still
+  genuinely unknown.
 - `ASSUMED BACKGROUND`: candidates for a sidequest. Do not teach them inline;
   that is how the main thread gets lost.
 
@@ -101,18 +105,44 @@ entirely** and go to step 8. Say so plainly; do not teach a little bit anyway.
 Otherwise: `curriculum.py lesson` for the lesson card, `mode-router.md` for
 the mode, `teaching-contract.md` for the shape. Do not exceed the cap.
 
+Use `sources.py plan` and the mapped teaching span where available. Check
+the source's definition and notation before delivering the explanation.
+When no reliable source is available, say the lesson is unanchored rather
+than presenting remembered detail as verified course material.
+
+If the learner says a topic was never taught or asks for the basics, deliver
+the explanation in the visible response first. Invite them to name what is
+unclear, answer that, then offer one small practice item. A prompt or a
+tool-only trace is not the explanation. Do not record a teaching event for
+content the learner could not see.
+
+Use the concept's domain register. If the learner names a gap in that
+subfield, update only that setting with `learner.py set-register` and their
+reason; do not treat the whole course as uniformly easy or hard.
+
 End every new concept with an explain-back. Record it.
 
 ## 7. Practise
 
-Three tiers per lesson: anchored, variant, modeling. Plus an interleaved drill
-once the course has two or more concepts at `practiced` or above.
+Choose an exercise for the evidence still needed: anchored for externally
+set difficulty, variant for a changed condition, modeling for a real task.
+These are available forms, not three required items in every lesson. Once
+the course has two or more concepts at `practiced` or above, include a
+short interleaved drill whose prompts do not announce the method. Do not
+turn a small execution error into a repeated full exercise.
 
 Record every attempt:
 
 ```
 learner.py record --course <slug> --data '<attempt json>'
 ```
+
+Carry the open `session_id` on exercises and attempts. A same-session
+execution slip cannot trigger another full item on the same concepts.
+Explain the local error, offer a single targeted correction only when the
+course goal needs it, then move on. A learner can ask for another full item;
+record that request and its reason. For a multi-concept item, record each
+concept's result separately; the overall verdict is only a summary.
 
 A pass needs quoted evidence from the learner's own answer. If you cannot
 quote it, it is not a pass — and the script will refuse the write anyway.

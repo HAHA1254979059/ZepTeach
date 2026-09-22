@@ -384,7 +384,6 @@ def cmd_open(args) -> int:
                              ((brief["next_lesson"] or {}).get("concepts")
                               or [])],
             "lesson_id": (brief["next_lesson"] or {}).get("lesson_id"),
-            "exercise_tiers": ["anchored", "variant", "modeling"],
         },
     }
     dm = brief["drift"].get("drift_minutes_per_week")

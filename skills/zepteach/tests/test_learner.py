@@ -156,6 +156,31 @@ class TestCli:
         assert got["register"] == "terse_technical"
         assert got["background_level"] == "expert"
 
+    def test_a_declared_gap_changes_one_subfield_register(self, root):
+        assert self.run(root, ["set-register", "--domain",
+                               "mathematics/linear-algebra", "--register",
+                               "analogy_first", "--because",
+                               "I need the basic intuition first"]) == 0
+        profile = ln.get_profile(root)
+        chosen = ln.register_for(profile, "mathematics/linear-algebra")
+        assert chosen["register"] == "analogy_first"
+        assert chosen["basis"] == "I need the basic intuition first"
+        assert ln.register_for(profile, "semiconductor-physics")["register"] == \
+            "terse_technical"
+        assert self._teach(root) == zs.EXIT_GATE
+        assert self.run(root, ["teach", "--course", "linear-algebra",
+                               "--data", json.dumps(fx.exposition(
+                                   register="analogy_first", rungs=[
+                                       {"rung": 1, "said": "What this solves."},
+                                   {"rung": 4, "said": "The formal rule."}]))]) == 0
+
+    def test_background_report_prefers_the_narrower_field(self):
+        profile = {"background": [
+            {"domain": "field", "level": "working"},
+            {"domain": "field/subfield", "level": "novice"}]}
+        assert ln.background_for(profile, "field/subfield")["level"] == \
+            "novice"
+
     def test_probe_exits_three_when_the_ground_is_broken(self, root, capsys):
         fx.write_mastery(root, [fx.mastery(fx.EIGENVALUE, state="shaky",
                                            downstream={"hold": True})])

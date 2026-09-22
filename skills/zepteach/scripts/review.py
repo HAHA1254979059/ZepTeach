@@ -207,13 +207,16 @@ def next_state(current: str, kind: str, verdict: str, first_taught, when,
     # either: what a promotion needs is a clean answer, and this was not one.
     if execution_only and verdict in ("fail", "partial"):
         return current, ("the idea held and the execution slipped, so this "
-                         "is not evidence against the concept. Have them "
-                         "redo that step rather than retesting the idea")
+                         "is not evidence against the concept. Offer one "
+                         "local correction only if needed for the course "
+                         "goal; otherwise move on without a full retest")
 
     if verdict == "fail":
-        if current in ("practiced", "consolidating", "mastered"):
+        if kind in ("delayed_retest", "transfer_test", "assessment") and \
+                current in ("practiced", "consolidating", "mastered"):
             return "shaky", "a due retest was failed"
-        return current, "failed, but the state was already below practiced"
+        return current, ("this attempt did not establish the concept; "
+                         "in-session failure does not erase earlier evidence")
 
     if verdict == "partial":
         if current in ("consolidating", "mastered") and \
@@ -278,6 +281,23 @@ def apply_evidence(mastery: dict, evidence: dict, min_days: dict,
                             " -> " + new)
     m["state"] = new
     m["_transition_reason"] = reason
+
+    if evidence.get("execution_only") and evidence.get("verdict") in (
+            "fail", "partial"):
+        # The attempt is kept for diagnosis, but it says nothing new about
+        # when the concept should be recalled. Recomputing the schedule with
+        # a partial grade would reset its interval to one day even while the
+        # mastery state stayed unchanged.
+        m["updated"] = _iso(now)
+        return m
+    if evidence.get("kind") == "inclass" and evidence.get("verdict") in (
+            "fail", "partial") and old in (
+            "practiced", "consolidating", "mastered"):
+        # An in-session miss is useful for deciding what to explain now, but
+        # it is not independent delayed evidence about retention. Keep the
+        # existing due date rather than pulling the learner back tomorrow.
+        m["updated"] = _iso(now)
+        return m
 
     grade = grade_of(evidence.get("verdict"),
                      evidence.get("latency_rating"),

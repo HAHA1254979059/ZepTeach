@@ -8,10 +8,14 @@
 
 `exercise.py` refuses the cases below. This file says what to do instead.
 
-## Three tiers, and where difficulty comes from
+## Three available tiers, and where difficulty comes from
 
-Every lesson owes all three. Missing one is not a shorter lesson, it is a
-different and weaker one.
+These tiers serve different teaching purposes. They are not a per-lesson
+quota. Choose the smallest set of exercises that can show the capability
+this lesson actually needs. An explain-back or a targeted question may be
+enough after a new explanation; a full modeling task belongs where the goal
+requires it. Repeating a large item after a local execution slip spends
+study time without adding evidence about the idea.
 
 **Anchored.** A real problem somebody else set, taken from a source and cited
 precisely enough to find again. Its difficulty comes from outside this system

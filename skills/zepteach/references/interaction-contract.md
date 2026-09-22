@@ -46,6 +46,19 @@ the lesson. The learner can select or enter with a mouse or keyboard. A
 multi-part question has separate labeled fields; do not ask the learner to
 retype earlier parts to correct one answer.
 
+When a response needs notation, mark `expects_notation` on that field and
+provide any useful `symbols`. For a table or matrix, give the field a `grid`
+with positive `rows` and `columns`. The renderer then shows compact cells and
+one nearby keypad; the native keyboard and tab order still work. Do not make
+the learner invent a text layout for a structured answer. Keep the keyboard
+near the active field and never stretch its keys across the full message.
+
+Put mathematics in the prompt with standard `\\(...\\)` or `\\[...\\]`
+delimiters. The inline view tries to typeset them when its online renderer is
+available. Also put the question's mathematical statement in the ordinary
+visible message using the host's native math rendering, so an offline or
+restricted view never hides the actual problem.
+
 In Codex, when local inline visualizations are available, include the view
 in the final message using the host's visualization content reference with
 the absolute path printed by `interaction.py`:

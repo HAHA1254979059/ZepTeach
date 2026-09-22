@@ -139,6 +139,12 @@ def check_issuable(item: dict, depth_targets: dict = None,
 
     check_depth(item, depth_targets)
 
+    if item.get("learner_requested_repeat") and not (
+            item.get("repeat_reason") or "").strip():
+        raise Refused("EXE031", "a repeated full item has no learner reason",
+                      "record what the learner asked for; a tutor's wish "
+                      "to retest is not the learner's request")
+
     if item.get("interleaved"):
         check_mixed(item)
 
@@ -199,11 +205,21 @@ def check_response(item: dict, notation_input=None) -> None:
             "paragraph and cannot be stored as data or compared with the "
             "next attempt")
 
+    for field in resp.get("fields") or []:
+        grid = field.get("grid")
+        if grid is not None and (not isinstance(grid, dict) or
+                any(not isinstance(grid.get(key), int) or grid[key] < 1
+                    for key in ("rows", "columns"))):
+            raise Refused("EXE025", "an answer grid needs positive rows and columns",
+                          "name the shape before issuing the item so the "
+                          "learner does not have to invent a text layout")
+
     if notation_input is None:
         return
 
     wants_notation = bool(resp.get("expects_notation")) or any(
-        f.get("expects_notation") for f in resp.get("fields") or [])
+        f.get("expects_notation") or f.get("grid")
+        for f in resp.get("fields") or [])
     if not wants_notation:
         return
 
@@ -337,6 +353,43 @@ def is_really_mixed(items: list) -> dict:
         problems.append("an item names the method it wants")
 
     return {"mixed": not problems, "problems": problems}
+
+
+def check_retry_after_slip(item: dict, attempts: list) -> None:
+    """A small execution error must not start another full same-session test.
+
+    A learner may explicitly ask to practise it again. Otherwise the useful
+    next move is one targeted correction if it matters, or moving on. Only
+    the most recent attempt on the affected concept is relevant.
+    """
+    session = item.get("session_id")
+    concepts = set(item.get("concept_ids") or [])
+    if not session or not concepts:
+        return
+    for attempt in reversed(attempts):
+        if attempt.get("session_id") != session:
+            continue
+        shared = concepts & set(attempt.get("concept_ids") or [])
+        if not shared:
+            continue
+        parts = attempt.get("concept_results") or []
+        slipped = ({r.get("concept_id") for r in parts
+                    if r.get("execution_only")} if parts else
+                   set(attempt.get("concept_ids") or [])
+                   if attempt.get("execution_only") else set())
+        if concepts <= slipped:
+            if item.get("learner_requested_repeat") and \
+                    (item.get("repeat_reason") or "").strip():
+                return
+            raise Refused(
+                "EXE030",
+                "the last answer already showed the idea; only its "
+                "execution slipped, and this is another full item on the "
+                "same concept in the same session",
+                "name the local step and offer one correction only if it "
+                "matters for the goal, or move to the next concept. A full "
+                "repeat needs the learner's explicit request and reason")
+        return
 
 
 # ---------------------------------------------------------------------------
@@ -533,6 +586,7 @@ def cmd_issue(args) -> int:
 
     try:
         result = check_issuable(item, notation_input=notation)
+        check_retry_after_slip(item, zs.read_jsonl(cdir / "attempts.jsonl"))
     except Refused as r:
         print("REFUSED [" + r.code + "]  " + r.message, file=sys.stderr)
         if r.suggestion:
