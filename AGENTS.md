@@ -65,6 +65,7 @@ whole design exists to prevent.
 
 Everything is wired up. Slash commands in `commands/`, three subagents in
 `agents/`, and a session-start hook that prints what is overdue.
+Install `commands/zt.md` as a personal command named `zt.md` for bare `/zt`.
 
 ## On anything else
 
@@ -123,6 +124,10 @@ The test suite needs no dependency beyond pytest itself. Its tests are worth rea
 most of them state, in the test name and docstring, a specific way this could
 go wrong while still producing output that reads perfectly well.
 
+The base release version is in `VERSION`. Keep the Claude and Codex plugin
+manifests equal to it. Only a clean local Codex package gets a `+codex`
+cache suffix; do not commit that suffix.
+
 ## The design, if you want it
 
 `PHILOSOPHY.md` is the foundation. Eight principles about how people learn,
@@ -138,13 +143,11 @@ This repository includes `.codex-plugin/plugin.json`, so the checkout is a
 native Codex plugin source without a separate manifest-generation step.
 
 Codex loads skills from `~/.agents/skills` for personal use, or from
-`<repo>/.agents/skills` for one project. The layout here is already what it
-expects, so linking `skills/zepteach` into one of those is the whole install,
-and `$zepteach` invokes it.
-
-`commands/zt.md` is a plain Markdown instruction with no platform syntax.
-Copy it into `~/.codex/prompts/` for a slash command, or ignore it: it only
-says to run `route.py next`, which you can do directly.
+`<repo>/.agents/skills` for one project. Link `skills/zt` into the personal
+skills directory as `zt` to make `/zt` the short entry. It reads the main
+`skills/zepteach` teaching method and routes the learner's request. Old
+custom prompts would appear as `/prompts:zt`, so they do not provide the
+requested short command.
 
 Marking has to be kept separate by hand; see the subagent section above.
 
@@ -158,11 +161,12 @@ On Windows, a directory junction needs no administrator rights:
 
 ```
 mklink /J "%USERPROFILE%\.claude\skills\zepteach" "<repo>\skills\zepteach"
-mklink /J "%USERPROFILE%\.claude\commands\zepteach" "<repo>\commands"
+copy "<repo>\commands\zt.md" "%USERPROFILE%\.claude\commands\zt.md"
 mklink /J "%USERPROFILE%\.claude\agents\zepteach" "<repo>\agents"
 ```
 
 On macOS or Linux, `ln -s` the same three.
+On Windows, recopy `zt.md` only when that launcher file changes.
 
 One consequence worth knowing: a link exposes the whole folder, including
 `tests/`, which `PACKAGING.md` says must never ship. That is acceptable for a

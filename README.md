@@ -93,8 +93,9 @@ Developed and tested on 3.13, on Linux, macOS and Windows. Nothing newer than
 
 ## Install
 
-Clone it once, then point your assistant at it. Linking rather than copying
-means an update is a `git pull` with nothing to reinstall.
+Clone it once, then point your assistant at it. Linking the skill keeps code
+updates live after `git pull`. A copied Windows command alias must be copied
+again only when `commands/zt.md` itself changes.
 
 ```bash
 git clone https://github.com/HAHA1254979059/ZepTeach
@@ -103,21 +104,23 @@ git clone https://github.com/HAHA1254979059/ZepTeach
 ### Claude Code
 
 ```bash
+mkdir -p ~/.claude/skills ~/.claude/commands ~/.claude/agents
 ln -s "$PWD/ZepTeach/skills/zepteach"  ~/.claude/skills/zepteach
-ln -s "$PWD/ZepTeach/commands"         ~/.claude/commands/zepteach
+ln -s "$PWD/ZepTeach/commands/zt.md"   ~/.claude/commands/zt.md
 ln -s "$PWD/ZepTeach/agents"           ~/.claude/agents/zepteach
 ```
 
 Windows, in a normal prompt with no administrator rights:
 
 ```bat
+mkdir "%USERPROFILE%\.claude\skills" "%USERPROFILE%\.claude\commands" "%USERPROFILE%\.claude\agents"
 mklink /J "%USERPROFILE%\.claude\skills\zepteach"   "C:\path\to\ZepTeach\skills\zepteach"
-mklink /J "%USERPROFILE%\.claude\commands\zepteach" "C:\path\to\ZepTeach\commands"
+copy "C:\path\to\ZepTeach\commands\zt.md" "%USERPROFILE%\.claude\commands\zt.md"
 mklink /J "%USERPROFILE%\.claude\agents\zepteach"   "C:\path\to\ZepTeach\agents"
 ```
 
-Start a new session and run `/zepteach:zt`. That is the only command; it is
-namespaced by the folder it is linked under.
+Start a new session and run `/zt`. The short command is installed as a
+personal command so it keeps the same name in any learning project.
 
 The three subagents give marking, background gaps and course design their own
 context. That isolation is the reason marking cannot go soft, so it is worth
@@ -130,24 +133,25 @@ The repository includes a native Codex plugin manifest at
 without a separate manifest-generation step.
 
 Codex reads skills from `~/.agents/skills` for personal use, or from
-`<repo>/.agents/skills` for one project. The layout ZepTeach already has —
-`SKILL.md` beside `scripts/` and `references/` — is exactly what Codex
-expects, so the skill is the whole install.
+`<repo>/.agents/skills` for one project. ZepTeach includes a short `zt`
+entry that loads the main teaching skill. Link that short entry into the
+personal skills directory to use `/zt` from any learning project.
 
 ```bash
 mkdir -p ~/.agents/skills
-ln -s "$PWD/ZepTeach/skills/zepteach" ~/.agents/skills/zepteach
+ln -s "$PWD/ZepTeach/skills/zt" ~/.agents/skills/zt
 ```
 
 Windows:
 
 ```bat
 mkdir "%USERPROFILE%\.agents\skills"
-mklink /J "%USERPROFILE%\.agents\skills\zepteach" "C:\path\to\ZepTeach\skills\zepteach"
+mklink /J "%USERPROFILE%\.agents\skills\zt" "C:\path\to\ZepTeach\skills\zt"
 ```
 
-Invoke it with `$zepteach`, or just say what you want to study and let Codex
-pick it up from the description.
+Start a new conversation and invoke it with `/zt`, optionally followed by
+what you want to study or change. Codex also shows enabled skills in its
+slash command list.
 
 When Codex exposes conversation-inline views, session questions and exercise
 answers appear beside the lesson with selectable options or labeled fields.

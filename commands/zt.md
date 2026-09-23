@@ -7,8 +7,12 @@ The only way in. There is no second command, and that is deliberate: nine
 commands meant the learner had to know which of nine applied before they
 could say what they wanted, which is a syllabus in the shape of a menu.
 
+Find the installed ZepTeach skill directory, then run its router from that
+directory. The learner's current project is not necessarily the plugin
+repository:
+
 ```
-python skills/zepteach/scripts/route.py next --said "$ARGUMENTS"
+python <zepteach-skill-directory>/scripts/route.py next --said "$ARGUMENTS"
 ```
 
 That reads what is on disk and prints four things: the step the state points

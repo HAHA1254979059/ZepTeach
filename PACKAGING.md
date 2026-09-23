@@ -13,7 +13,9 @@ them when they set up a course, and they live in the learning data root
 |---|---|
 | `.claude-plugin/plugin.json` | Claude Code manifest |
 | `.codex-plugin/plugin.json` | Codex manifest |
+| `VERSION` | Base release version. Both plugin manifests must match it. |
 | `skills/zepteach/SKILL.md` | routing table |
+| `skills/zt/SKILL.md` | short `/zt` entry for Codex |
 | `skills/zepteach/references/*.md` | teaching doctrine — method only |
 | `skills/zepteach/scripts/*.py` | state engine and gates |
 | `skills/zepteach/scripts/schemas/*.json` | shapes, no content |
@@ -44,3 +46,11 @@ was once found sitting in the plugin directory for exactly this reason. Every
 check of this kind runs inside a temporary directory that is deleted
 afterwards, never inside the plugin directory or the learner's data
 directory.
+
+## Versioning
+
+`VERSION` is the base version for both Claude Code and Codex. Keep both
+manifests identical to it; the test suite checks this. A repository release
+uses a matching `v<version>` Git tag. A local Codex development installation
+may append `+codex.<timestamp>` to the clean package copy to refresh its
+cache. That suffix is local and must not be committed to the repository.

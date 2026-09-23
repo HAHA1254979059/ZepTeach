@@ -140,12 +140,19 @@ class TestPluginManifests:
         codex = manifest("codex")
         for field in ("name", "version"):
             assert claude[field] == codex[field]
+        assert claude["version"] == text(PLUGIN / "VERSION").strip()
 
     def test_codex_manifest_exposes_the_skill(self):
         codex = manifest("codex")
         assert codex["skills"] == "./skills/"
         assert codex["interface"]["displayName"] == "ZepTeach"
         assert codex["interface"]["defaultPrompt"]
+
+    def test_short_entry_points_to_the_same_teaching_method(self):
+        short = text(PLUGIN / "skills" / "zt" / "SKILL.md")
+        assert "name: zt" in short
+        assert "../zepteach/SKILL.md" in short
+        assert "route.py next" in short
 
 
 class TestSubagents:
