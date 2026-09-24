@@ -60,6 +60,8 @@ class TestBrief:
     def test_the_brief_carries_the_register_for_this_domain(self, root):
         b = se.build_brief(root, "linear-algebra", "normal")
         assert b["register"]["register"] == "technical_with_gloss"
+        assert b["next_concept_registers"]
+        assert b["next_concept_registers"][0]["concept_id"] == fx.EIGENVALUE
 
     def test_open_session_does_not_assign_a_three_tier_quota(self, root):
         sid = open_session(root)

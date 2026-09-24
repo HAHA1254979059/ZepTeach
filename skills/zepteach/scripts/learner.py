@@ -97,7 +97,7 @@ def get_profile(root: Path) -> dict:
 # register: how to talk about this domain, to this person
 # --------------------------------------------------------------------------
 
-def register_for(profile: dict, domain: str) -> dict:
+def register_for(profile: dict, domain: str, concept_id: str = None) -> dict:
     """Most specific match wins; the entry named * is the fallback. A single
     global register is the root cause of explanations that are simultaneously
     too hand-wavy in one field and too dense in another."""
@@ -105,6 +105,14 @@ def register_for(profile: dict, domain: str) -> dict:
     best = None
     best_len = -1
     for e in entries:
+        if e.get("concept_id"):
+            if concept_id and e["concept_id"] == concept_id:
+                out = dict(e)
+                out.setdefault("max_analogies_per_concept", 1)
+                out.setdefault("require_operational_definition", True)
+                out.setdefault("formalism_tolerance", 3)
+                return out
+            continue
         d = e.get("domain", "")
         if d == "*":
             if best is None:
@@ -339,12 +347,27 @@ def brief_line(root, rows=None) -> str:
 
 
 def cmd_register(args) -> int:
-    prof = get_profile(_root(args))
-    reg = register_for(prof, args.domain)
-    bg = background_for(prof, args.domain)
+    root = _root(args)
+    prof = get_profile(root)
+    concept = (zs.load_registry(root).get(args.concept)
+               if args.concept else None)
+    if args.concept and concept is None:
+        print("no such concept: " + args.concept, file=sys.stderr)
+        return zs.EXIT_NOT_FOUND
+    domain = concept.get("domain") if concept else args.domain
+    reg = register_for(prof, domain, args.concept)
+    bg = background_for(prof, domain)
     if bg:
         reg["background_level"] = bg.get("level")
         reg["background_basis"] = bg.get("basis")
+    elif args.concept:
+        # A broad course domain must not silently hide a narrower novice
+        # assessment. These are hypotheses for the teacher to match, not
+        # automatic claims about this concept.
+        reg["background_hypotheses"] = prof.get("background", [])
+    if args.concept:
+        reg["concept_id"] = args.concept
+        reg["concept_domain"] = domain
     print(json.dumps(reg, ensure_ascii=False, indent=2))
     return zs.EXIT_OK
 
@@ -356,10 +379,20 @@ def cmd_set_register(args) -> int:
         print("learner profile not found", file=sys.stderr)
         return zs.EXIT_NOT_FOUND
     profile = zs.read_json(path)
+    concept = (zs.load_registry(root).get(args.concept)
+               if args.concept else None)
+    if args.concept and concept is None:
+        print("no such concept: " + args.concept, file=sys.stderr)
+        return zs.EXIT_NOT_FOUND
     entries = list(profile.get("registers") or [])
     entry = next((dict(e) for e in entries
-                  if e.get("domain") == args.domain),
-                 {"domain": args.domain})
+                  if (e.get("concept_id") == args.concept
+                      if args.concept else
+                      e.get("domain") == args.domain and
+                      not e.get("concept_id"))),
+                 {"domain": concept.get("domain") if concept else args.domain})
+    if args.concept:
+        entry["concept_id"] = args.concept
     entry["register"] = args.register
     entry["basis"] = args.because
     entry["updated"] = rv._iso(rv._utcnow())
@@ -368,14 +401,18 @@ def cmd_set_register(args) -> int:
     if args.formalism_tolerance is not None:
         entry["formalism_tolerance"] = args.formalism_tolerance
     profile["registers"] = [e for e in entries
-                            if e.get("domain") != args.domain] + [entry]
+                            if not (e.get("concept_id") == args.concept
+                                    if args.concept else
+                                    e.get("domain") == args.domain and
+                                    not e.get("concept_id"))] + [entry]
     errors = zs.validate_doc(profile, "profile")
     if errors:
         for error in errors:
             print("invalid profile: " + str(error), file=sys.stderr)
         return zs.EXIT_VALIDATION
     zs.atomic_write_json(path, profile)
-    print("register for " + args.domain + " -> " + args.register)
+    print("register for " + (args.concept or args.domain) + " -> " +
+          args.register)
     return zs.EXIT_OK
 
 
@@ -492,14 +529,15 @@ def cmd_teach(args) -> int:
 
     concept_domain = (zs.load_registry(root).get(cid) or {}).get("domain")
     reg = register_for(get_profile(root), concept_domain or
-                       course.get("domain"))
+                       course.get("domain"), cid)
     if expo.get("register") != reg.get("register"):
         print("GATE FAILED: explanation register " +
               str(expo.get("register")) + " does not match the stored "
               "setting " + str(reg.get("register")) + " for " +
               str(concept_domain or course.get("domain")) +
               ". Use learner.py set-register with the learner's reason "
-              "before teaching at a different level.", file=sys.stderr)
+              "(--concept " + cid + " for an exact gap) before teaching "
+              "at a different level.", file=sys.stderr)
         return zs.EXIT_GATE
     try:
         checked = tp.check_exposition(
@@ -732,11 +770,15 @@ def build_parser() -> argparse.ArgumentParser:
     sp.set_defaults(func=cmd_show)
 
     sp = sub.add_parser("register")
-    sp.add_argument("--domain", required=True)
+    target = sp.add_mutually_exclusive_group(required=True)
+    target.add_argument("--domain")
+    target.add_argument("--concept")
     sp.set_defaults(func=cmd_register)
 
     sp = sub.add_parser("set-register", help="change how one field is taught")
-    sp.add_argument("--domain", required=True)
+    target = sp.add_mutually_exclusive_group(required=True)
+    target.add_argument("--domain")
+    target.add_argument("--concept")
     sp.add_argument("--register", required=True,
                     choices=["terse_technical", "technical_with_gloss",
                              "analogy_first"])

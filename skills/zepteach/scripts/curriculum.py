@@ -214,9 +214,15 @@ def register_concepts(root: Path, course: dict, curriculum: dict) -> dict:
                     entry.setdefault("courses", []).append(course_id)
                     linked.append(cid)
                 continue
+            domain = c.get("domain")
+            if not domain:
+                raise ValueError("new concept " + cid + " needs a specific "
+                                 "domain in the curriculum; the course's "
+                                 "broad domain cannot choose its teaching "
+                                 "level")
             entry = {"concept_id": cid,
                      "canonical_title": c.get("title") or cid,
-                     "domain": course.get("domain") or "unspecified",
+                     "domain": domain,
                      "courses": [course_id],
                      "note_path": "notes/concepts/" + cid + ".md"}
             reg.setdefault("concepts", []).append(entry)

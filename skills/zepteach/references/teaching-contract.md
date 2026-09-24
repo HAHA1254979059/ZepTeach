@@ -7,8 +7,9 @@
 
 ## The register decides the shape of the explanation
 
-`learner.py register --domain <d>` returns the register for the field in
-hand, and the session brief prints it. Per domain on purpose: one person can
+`learner.py register --concept <id>` returns the setting to use for the
+concept being taught. The session brief lists upcoming concepts separately;
+its course register is only a fallback. Per domain on purpose: one person can
 be expert in one field and a beginner in another, and the expertise reversal
 effect says instruction that helps the second actively harms the first.
 Worked examples and analogies reduce load for a novice and become redundant
@@ -24,12 +25,19 @@ noise for an expert.
 `require_operational_definition` decides whether a new term must be glossed.
 
 Use the concept's registered domain, not only the course's broad domain. A
-learner can know one subfield and lack the next. When they name that gap,
-record a narrower setting with `learner.py set-register --domain <domain>
---register <register> --because <their words>` before teaching. Other
-fields keep their settings. An explanation recorded at a different level
-from the stored setting is refused, so this change survives the current
-conversation.
+learner can know one subfield and lack the next. Before choosing the register,
+compare the learner's assessed or declared background with the concept's
+actual prerequisites. If the profile lists narrower background fields that
+do not match a broad concept domain, `register --concept` reports them as
+hypotheses. Do not read the fallback as proof of competence. Resolve the
+field explicitly; do not infer a permanent ability level from one mistake.
+
+When they name a gap, record a narrower field setting with `learner.py
+set-register --domain <domain> --register <register> --because <their words>`.
+If the registered domain is too broad or the gap is unique to one concept,
+use `set-register --concept <id>` instead. Other concepts keep their settings.
+An explanation recorded at a different level from the selected setting is
+refused, so this change survives the current conversation.
 
 ## The explanation ladder is trimmable, not mandatory
 
@@ -56,9 +64,18 @@ cost.
 
 How to hand the material over, piece by piece, is in `delivery.md`.
 
-Skipping upward is fine and usually right. Skipping *down* into more basic
-material mid-explanation means the register is wrong — say so and fix the
-register rather than quietly re-teaching.
+Skipping upward is fine for someone with proven grounding. For a beginner,
+do not jump from the intuitive picture to a full derivation. Establish the
+smallest concrete case and its notation first, then let the learner decide
+whether to advance. Skipping *down* into more basic material mid-explanation
+means the register or prerequisite map was wrong — say so and repair the
+route, rather than answering each newly exposed gap in isolation.
+
+Before sending a beginner's segment, check every symbol and operation against
+what this learner has demonstrated. Use no unexplained abbreviation. One
+segment should have one new idea and one worked instance. If a later formula
+needs several new ideas, that formula belongs in a later segment. A complete
+proof can be kept for later without lowering the course's depth target.
 
 ## Analogies
 

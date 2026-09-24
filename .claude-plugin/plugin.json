@@ -1,7 +1,7 @@
 {
   "name": "zepteach",
   "description": "ZepTeach — a local, state-driven learning system. Durable learner model, source-anchored lessons, executable exercises, isolated grading, and spaced retesting. Teaching persona: Zep.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": {
     "name": "zhanzepp"
   }

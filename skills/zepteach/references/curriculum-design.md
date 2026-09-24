@@ -58,6 +58,13 @@ register-concepts` reports reuse. Two entries whose names look alike are
 flagged for a decision, because the same word meaning different things in two
 fields is common and merging them silently is worse than either.
 
+Give every new concept its own `domain` in the curriculum. This is the field
+used to choose how to explain it, not the course's broad subject label. A
+course spanning probability, algebra and model training cannot give all three
+the same teaching domain. `register-concepts` refuses a new concept without
+one. Existing concepts keep their registered domain and are not silently
+reclassified when a second course reuses them.
+
 ## Prerequisites
 
 Only real ones. A prerequisite edge means the second concept cannot be

@@ -142,6 +142,18 @@ class TestDrift:
 
 
 class TestRegisterConcepts:
+    def test_new_concept_cannot_inherit_a_broad_course_domain(self, root):
+        zs.atomic_write_json(root / "concepts.json",
+                             {"schema_version": 1, "concepts": []})
+        curriculum = zs.read_json(root / "courses" / "linear-algebra" /
+                                  "curriculum.json")
+        del curriculum["modules"][0]["lessons"][0]["concepts"][0]["domain"]
+        zs.atomic_write_json(root / "courses" / "linear-algebra" /
+                             "curriculum.json", curriculum)
+        assert cu.main(["--root", str(root), "register-concepts",
+                        "--course", "linear-algebra"]) == zs.EXIT_VALIDATION
+        assert zs.read_json(root / "concepts.json")["concepts"] == []
+
     def test_a_new_course_adds_its_concepts(self, root, capsys):
         (root / "concepts.json").unlink()
         zs.atomic_write_json(root / "concepts.json",

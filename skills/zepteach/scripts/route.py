@@ -95,6 +95,7 @@ ROUTES = {
         "run": ["interaction.py energy (unless already stated)",
                 "session.py open --course <slug> --energy <level>",
                 "learner.py probe --course <slug> --lesson <id>",
+                "learner.py register --concept <id> (for each concept before explaining)",
                 "sources.py plan --course <slug>",
                 "interaction.py request --file <probe-request.json>",
                 "curriculum.py lesson --course <slug> --lesson <id>",

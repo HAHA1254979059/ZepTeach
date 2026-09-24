@@ -33,6 +33,13 @@ Each piece ends with something they can respond to:
 Do not treat "I follow" or "go on" as evidence of mastery. It controls the
 pace, not the score.
 
+When the learner is a beginner or has just reported a missing foundation,
+the first piece starts from a familiar concrete case. Do not include the
+abstract shortcut, every edge case and a full derivation in that same reply.
+If they ask why a later step works, rebuild the chain from the last agreed
+step; do not keep explaining one symbol at a time in the original proof.
+Pausing between pieces is part of the explanation, not a delay before a test.
+
 ### How much is one piece
 
 **One idea, cut where you could ask them something.** A starting rule, not a

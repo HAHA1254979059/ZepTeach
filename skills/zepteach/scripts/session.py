@@ -210,6 +210,21 @@ def build_brief(root: Path, slug: str, energy: str, minutes=None,
     d = cur.drift(course, curriculum, rows, now.date())
     register = ln.register_for(profile, course.get("domain", ""))
     bg = ln.background_for(profile, course.get("domain", ""))
+    concept_registers = []
+    if nxt is not None:
+        registry = zs.load_registry(root)
+        for module in curriculum.get("modules", []):
+            for lesson in module.get("lessons", []):
+                if lesson.get("lesson_id") != nxt.get("lesson_id"):
+                    continue
+                for concept in lesson.get("concepts", []):
+                    cid = concept.get("concept_id")
+                    domain = (registry.get(cid) or {}).get("domain") or \
+                        concept.get("domain") or course.get("domain", "")
+                    selected = ln.register_for(profile, domain, cid)
+                    concept_registers.append({"concept_id": cid,
+                                              "domain": domain,
+                                              "register": selected["register"]})
 
     persona = dict(config.get("persona") or {})
     if ENERGY.get(energy, {}).get("banter") == 0:
@@ -235,6 +250,7 @@ def build_brief(root: Path, slug: str, energy: str, minutes=None,
         "persona": persona,
         "register": register,
         "background": bg,
+        "next_concept_registers": concept_registers,
         "energy": energy,
         "planned_minutes": planned_minutes,
         "new_concept_cap": (new_concept_cap(profile, energy)
@@ -281,7 +297,7 @@ def render_brief(brief: dict) -> str:
                 str(r.get("formalism_tolerance")) + "/5")
     if brief.get("background"):
         reg_line += "  background: " + str(brief["background"].get("level"))
-    lines.append(reg_line)
+    lines.append("COURSE FALLBACK " + reg_line)
     p = brief["persona"]
     lines.append("ZEP  closeness " + str(p.get("closeness")) + "/5  banter " +
                  str(p.get("banter")) +
@@ -327,6 +343,9 @@ def render_brief(brief: dict) -> str:
         lines.append("NEXT  " + str(n["lesson_id"]) + "  " + str(n["title"]) +
                      "  (~" + str(n["estimated_minutes"]) + " min, " +
                      str(n["state"]) + ")")
+        for concept in brief.get("next_concept_registers", []):
+            lines.append("  TEACH " + concept["concept_id"] + " [" +
+                         concept["domain"] + "]  " + concept["register"])
         for blk in n["blockers"]:
             lines.append("  BLOCKED by " + blk["concept_id"] + " (" +
                          blk["reason"] + ", needed by " + blk["for"] + ")")

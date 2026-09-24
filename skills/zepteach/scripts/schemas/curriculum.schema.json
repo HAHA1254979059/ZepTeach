@@ -153,6 +153,11 @@
           "type": "string",
           "minLength": 1
         },
+        "domain": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Specific teaching field for this concept. Required when registering a new concept; must not be copied from a broad multi-field course."
+        },
         "depth_target": {
           "type": "integer",
           "minimum": 1,

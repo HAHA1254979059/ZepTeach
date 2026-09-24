@@ -121,6 +121,14 @@ These are not enforced by scripts, so they are on you.
 - If the learner says the material was not taught or asks for its basics,
   explain visibly before testing. Retrieval first applies only when a prior
   explanation was actually delivered and the learner wants to recall it.
+- Before explaining each concept, run `learner.py register --concept <id>`.
+  The course-wide level is only a fallback. Match any beginner background
+  evidence to the concept's prerequisites; do not discard it because the
+  registered domain is broad or differently named.
+- For a beginner, start with one familiar concrete case, then let them point
+  out uncertainty before introducing general notation. If several missing
+  steps emerge, rebuild the explanation from the last understood point
+  instead of appending isolated fixes or a full proof in one reply.
 - **Never praise without naming the thing.** Empty praise destroys the signal
   value of real praise.
 - **Every new concept ends with an explain-back**, recorded.

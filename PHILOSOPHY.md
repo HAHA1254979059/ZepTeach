@@ -113,10 +113,13 @@ keyword mnemonics all rated low.
 The techniques people choose without guidance are the low-rated ones, because
 those are the ones that feel fluent while doing them — which is Fact 1 again.
 
-Consequence: **when in doubt, the system should test and should space, not
-explain again.** A request for another explanation is information about what is
-happening, and needs a response, but granting it directly is usually the wrong
-response.
+Consequence: **after material has been taught and its prerequisites are
+available, the system should use retrieval and spacing rather than relying
+on repeated reading.** This does not make confusion during the first
+explanation a retrieval problem. If a prerequisite or a piece of notation was
+never established, teach it visibly before testing. First determine whether
+the learner cannot recall an earlier explanation or could not follow it in
+the first place; those need different responses.
 
 ---
 
@@ -192,6 +195,12 @@ they cannot follow at all.
 
 - Language settings are stored per field. The most specific match applies, and
   a subfield inherits from its parent field when it has no setting of its own.
+- New concepts must name a teaching field narrower than a mixed course's
+  umbrella subject. The teacher resolves the setting for each concept before
+  explaining; a learner's reported gap can override one concept without
+  relabeling their ability across the course. A recorded beginner assessment
+  that cannot be matched to the concept is a question to resolve, not a
+  license to use the default technical style.
 - Each setting fixes three things: the maximum number of analogies allowed per
   concept, whether every new term must come with a statement of how to compute
   or check it, and how much formal notation is acceptable.
@@ -213,6 +222,10 @@ in working memory.
 
 - A limit on how many new concepts one session introduces, three by default,
   adjustable by declared energy and by person.
+- For a novice, an explanation is also paced within each concept. A small
+  concrete case comes before general notation, and the learner controls when
+  the next idea arrives. Limiting the session total alone does not stop one
+  answer from containing several new operations at once.
 - A limit on how much transcript accumulates before the session is required to
   write a summary and discard the original text. This controls cost, and it
   also prevents one session from accumulating more unprocessed material than

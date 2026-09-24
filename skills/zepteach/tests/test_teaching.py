@@ -84,8 +84,16 @@ class TestAnExplanationHasToSayWhatWasSaid:
         assert r.code == "EXP006"
         good = fx.exposition(register="analogy_first", rungs=[
             {"rung": 1, "said": "The problem this solves is visible here."},
+            {"rung": 3, "said": "One small worked case."},
             {"rung": 4, "said": "Here is the formal rule."}])
         assert tp.check_exposition(good)["ok"]
+
+    def test_beginner_cannot_jump_from_intuition_to_formalism(self):
+        r = refusal(lambda: tp.check_exposition(fx.exposition(
+            register="analogy_first", rungs=[
+                {"rung": 1, "said": "The purpose."},
+                {"rung": 4, "said": "A full formula."}])))
+        assert r.code == "EXP007"
 
 
 class TestAnExplanationMustExistOutsideTheQuestions:

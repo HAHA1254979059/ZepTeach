@@ -116,9 +116,13 @@ unclear, answer that, then offer one small practice item. A prompt or a
 tool-only trace is not the explanation. Do not record a teaching event for
 content the learner could not see.
 
-Use the concept's domain register. If the learner names a gap in that
-subfield, update only that setting with `learner.py set-register` and their
-reason; do not treat the whole course as uniformly easy or hard.
+Run `learner.py register --concept <id>` before each new concept. The course
+register in the session brief is a fallback, not a teaching decision for all
+its lessons. Match any background hypotheses to this concept's prerequisites;
+where the mapping is uncertain, begin with a concrete case and ask what is
+already familiar. If the learner names a gap, update this field or this exact
+concept with `learner.py set-register` and their reason. Do not treat the
+whole course as uniformly easy or hard.
 
 End every new concept with an explain-back. Record it.
 

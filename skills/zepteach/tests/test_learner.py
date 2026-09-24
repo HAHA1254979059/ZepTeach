@@ -59,6 +59,19 @@ class TestRegister:
     def test_an_empty_profile_still_yields_a_usable_register(self):
         assert ln.register_for({}, "x")["register"] == "technical_with_gloss"
 
+    def test_exact_concept_override_beats_a_broad_course_domain(self):
+        profile = {"registers": [
+            {"domain": "*", "register": "technical_with_gloss"},
+            {"domain": "model training", "register": "terse_technical"},
+            {"domain": "model training", "concept_id": "math.matrix-calculus",
+             "register": "analogy_first"}]}
+        assert ln.register_for(profile, "model training",
+                               "math.matrix-calculus")["register"] == \
+            "analogy_first"
+        assert ln.register_for(profile, "model training",
+                               "ml.optimization")["register"] == \
+            "terse_technical"
+
     def test_background_is_looked_up_the_same_way(self):
         assert ln.background_for(fx.profile(),
                                  "semiconductor-physics")["level"] == "expert"
@@ -156,6 +169,39 @@ class TestCli:
         assert got["register"] == "terse_technical"
         assert got["background_level"] == "expert"
 
+    def test_concept_register_reports_unmatched_background_as_hypotheses(
+            self, root, capsys):
+        registry = zs.read_json(root / "concepts.json")
+        registry["concepts"][0]["domain"] = "broad course subject"
+        zs.atomic_write_json(root / "concepts.json", registry)
+        assert self.run(root, ["register", "--concept", fx.EIGENVALUE]) == 0
+        got = json.loads(capsys.readouterr().out)
+        assert got["concept_id"] == fx.EIGENVALUE
+        assert got["register"] == "technical_with_gloss"
+        assert any(b["domain"] == "mathematics" for b in
+                   got["background_hypotheses"])
+
+    def test_exact_concept_gap_survives_and_other_concepts_keep_their_level(
+            self, root, capsys):
+        assert self.run(root, ["set-register", "--concept", fx.EIGENVALUE,
+                               "--register", "analogy_first", "--because",
+                               "This notation has not been taught"]) == 0
+        capsys.readouterr()
+        assert self.run(root, ["register", "--concept", fx.EIGENVALUE]) == 0
+        got = json.loads(capsys.readouterr().out)
+        assert got["register"] == "analogy_first"
+        profile = ln.get_profile(root)
+        assert ln.register_for(profile, "mathematics/linear-algebra",
+                               fx.EIGENVECTOR)["register"] == \
+            "technical_with_gloss"
+        assert self._teach(root) == zs.EXIT_GATE
+        assert self.run(root, ["teach", "--course", "linear-algebra",
+                               "--data", json.dumps(fx.exposition(
+                                   register="analogy_first", rungs=[
+                                       {"rung": 1, "said": "Why it matters."},
+                                       {"rung": 3, "said": "One small case."},
+                                       {"rung": 4, "said": "The general rule."}]))]) == 0
+
     def test_a_declared_gap_changes_one_subfield_register(self, root):
         assert self.run(root, ["set-register", "--domain",
                                "mathematics/linear-algebra", "--register",
@@ -172,6 +218,7 @@ class TestCli:
                                "--data", json.dumps(fx.exposition(
                                    register="analogy_first", rungs=[
                                        {"rung": 1, "said": "What this solves."},
+                                       {"rung": 3, "said": "A concrete case."},
                                    {"rung": 4, "said": "The formal rule."}]))]) == 0
 
     def test_background_report_prefers_the_narrower_field(self):

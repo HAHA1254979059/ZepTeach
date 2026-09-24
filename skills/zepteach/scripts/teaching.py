@@ -162,6 +162,19 @@ def check_exposition(expo: dict, item_prompts=None,
             "phenomenon or intuitive picture",
             "show what the idea is for or what it looks like before the "
             "formal statement. A named register must change the teaching")
+    if expo.get("register") == "analogy_first" and 4 in reached:
+        order = [int(r.get("rung", 0)) for r in rungs]
+        if 3 not in reached or order.index(3) > order.index(4) or \
+                min((order.index(r) for r in (1, 2) if r in reached),
+                    default=len(order)) > order.index(3):
+            raise Refused(
+                "EXP007",
+                "beginner formalism was delivered before a concrete "
+                "minimal case",
+                "first show the purpose or intuition, then work through "
+                "one small concrete case, and only then introduce the "
+                "general form; do not record the general form as taught "
+                "until the learner has seen those earlier pieces")
     start = REGISTER_START.get(expo.get("register"))
     below = [r for r in reached if start and r < start]
 

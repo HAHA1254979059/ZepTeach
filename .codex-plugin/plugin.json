@@ -1,6 +1,6 @@
 {
   "name": "zepteach",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A local, state-driven learning system with durable learner records, isolated grading, and spaced retesting.",
   "author": {
     "name": "zhanzepp",
