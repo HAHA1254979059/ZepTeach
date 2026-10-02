@@ -498,6 +498,16 @@ use the same missing decision. A fix is complete when those moments share a
 clear rule and a realistic check, rather than when the reported example alone
 works.
 
+Judge severity by the learning consequence. If the learner cannot perform
+the requested activity, if their real input is not received, or if progress
+is being inferred from generated output, the core learning process is
+broken. Treat that before cosmetic refinements. Trace a requested interaction
+through artifact generation, actual response reference, tested controls,
+received learner input and durable record. These are different evidence
+levels; producing a file cannot establish that a learner saw or used it.
+Keep original reports immutable and handling receipts separate, so a
+successful development test cannot overwrite a still-unconfirmed user outcome.
+
 This does not make every preference universal. Preserve the learner's choice
 and the host's actual capabilities. In particular, a convenient way to enter
 an answer must not quietly change what the answer proves. Test the behavior

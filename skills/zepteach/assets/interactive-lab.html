@@ -1,0 +1,67 @@
+<section id="__ROOT_ID__" aria-label="交互学习环节" data-zt-requires-outcomes="__REQUIRES_OUTCOMES__">
+  <h3 data-zt-title>__TITLE_TEXT__</h3>
+  <p data-zt-prompt>__PROMPT_TEXT__</p>
+  <noscript><p>此客户端未运行交互，请按对话正文提供预测与理由。</p></noscript>
+  <section data-zt-scene aria-label="实验场景">__SCENE__</section>
+  <form data-zt-prediction>
+    <div data-zt-fields>__STATIC_FIELDS__</div>
+    <label class="form-label">你的理由
+      <textarea class="form-control" name="reason" required></textarea>
+    </label>
+    <label class="form-label" data-zt-confidence hidden>信心，0–100（可留空）
+      <input class="form-control" type="number" name="confidence" min="0" max="100" step="1">
+    </label>
+    <div class="viz-row"><button class="btn btn-primary" type="button" data-zt-predict disabled>保存预测，开始实验</button></div>
+  </form>
+  <p data-zt-status role="status" aria-live="polite">等待预测与理由。</p>
+  <section data-zt-simulation hidden>__SIMULATION__</section>
+  <section data-zt-reflection hidden>
+    <label class="form-label">你的观察或仍有的疑问
+      <textarea class="form-control" data-zt-observation></textarea>
+    </label>
+    <div class="viz-row">
+      <button class="btn btn-primary" type="button" data-zt-confirm>确认本环节完成，交给老师检查</button>
+      <button class="btn" type="button" data-zt-send>将操作与回答发回对话</button>
+    </div>
+  </section>
+  <details>
+    <summary>反馈困难或界面问题</summary>
+    <label class="form-label">反馈类型
+      <select class="form-select" data-zt-feedback-type>
+        <option value="ui_feedback">界面反馈</option>
+        <option value="difficulty">学习困难</option>
+      </select>
+    </label>
+    <label class="form-label">实际遇到的问题
+      <textarea class="form-control" data-zt-feedback-text></textarea>
+    </label>
+    <button class="btn" type="button" data-zt-feedback-send disabled>发送反馈</button>
+  </details>
+  <label class="form-label" data-zt-manual hidden>请将以下内容发送到学习对话
+    <textarea class="form-control" data-zt-packet readonly></textarea>
+  </label>
+</section>
+<style>
+#__ROOT_ID__ { color: var(--foreground); display: grid; gap: 12px; min-width: 0; }
+#__ROOT_ID__ p { margin: 0; overflow-wrap: anywhere; }
+#__ROOT_ID__ form, #__ROOT_ID__ [data-zt-reflection], #__ROOT_ID__ details { display: grid; gap: 12px; }
+#__ROOT_ID__ [data-zt-fields] { display: grid; gap: 12px; align-items: start; min-width: 0; }
+#__ROOT_ID__ [data-zt-simulation] { min-width: 0; }
+#__ROOT_ID__ [data-zt-status][data-error="true"] { color: var(--destructive); }
+#__ROOT_ID__ [hidden] { display: none !important; }
+</style>
+<script>
+(() => {
+  const root = document.getElementById('__ROOT_ID__');
+  const spec = __SPEC_JSON__;
+  __OUTCOME_VIEW__
+  __RUNTIME__
+})();
+</script>
+<script>
+(() => {
+  const root = document.getElementById('__ROOT_ID__');
+  const lab = root.ztInteractive;
+  __SIMULATION_SCRIPT__
+})();
+</script>

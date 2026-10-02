@@ -68,6 +68,20 @@ answer fields there, including compact notation controls and cell grids.
 Otherwise it presents the same fields in text. A shorter input is used only
 when it still shows the understanding the question asks for.
 
+**Interactive work has a reusable delivery path.** One current step collects
+a prediction and reason before an experiment. Its initial scene, primary
+action, layouts and outcome mapping are checked separately. A partial display
+must account for matching outcomes in the omitted group, and a zero result
+cannot be replaced with an invented success to make the picture interesting.
+Real submitted feedback is appended to a private journal; development
+receipts are separate and do not change learning progress.
+
+**Mobile support is checked, not assumed.** A narrow desktop preview is not
+a real mobile-app verdict. Static question markup and a normal-response text
+backup preserve the same task when scripts, host styles or return methods
+are unavailable. Visualize availability depends on the host account and app
+version. See the [interactive workflow](skills/zepteach/references/interactive-learning.md).
+
 **Every number says where it came from.** Forty-seven tunable values, each
 marked as supported by evidence, borrowed from an established tool, an
 engineering decision, or a starting guess to be replaced by your own records.

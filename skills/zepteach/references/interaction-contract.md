@@ -13,6 +13,10 @@ guess or turn a derivation into recognition without changing the assessment.
 
 ## One request, several hosts
 
+For a requested experiment with prediction and observable consequences,
+use the `interactive` route and `interactive-learning.md`. The ordinary
+question renderer below is not a substitute for a working simulator.
+
 Use `interaction.py energy` for the session condition. Use
 `interaction.py exercise --file <item.json>` for an issued item. For a probe
 or another question, write a small request with `request_id`, `prompt`, and

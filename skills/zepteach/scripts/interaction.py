@@ -277,7 +277,7 @@ def inline_html(request: dict) -> str:
       spec.response.symbols);
   }
   const submit = document.createElement('button');
-  submit.type = 'submit';
+  submit.type = 'button';
   submit.textContent = '提交回答';
   const status = document.createElement('div');
   status.className = 'zt-status';
@@ -304,11 +304,12 @@ def inline_html(request: dict) -> str:
   form.addEventListener('keydown', event => {
     if (event.key === 'Enter' && event.ctrlKey && event.target.tagName === 'TEXTAREA') {
       event.preventDefault();
-      form.requestSubmit();
+      submit.click();
     }
   });
-  form.addEventListener('submit', async event => {
+  async function submitAnswer(event) {
     event.preventDefault();
+    if (!form.reportValidity()) return;
     const values = Object.fromEntries(new FormData(form).entries());
     if (!Object.keys(values).length) return;
     if (!window.openai?.sendFollowUpMessage) {
@@ -324,7 +325,9 @@ def inline_html(request: dict) -> str:
       submit.disabled = false;
       status.textContent = '提交失败，请在对话中发送答案。';
     }
-  });
+  }
+  form.addEventListener('submit', submitAnswer);
+  submit.addEventListener('click', submitAnswer);
 })();
 </script>
 """
@@ -367,6 +370,9 @@ def main(argv=None) -> int:
     output = output_dir / (safe_name(request["request_id"]) + "-" + digest + ".html")
     output.write_text(content, encoding="utf-8")
     print("INLINE  " + str(output.resolve()))
+    print("FINAL RESPONSE REFERENCE\nvisualize" + json.dumps(
+        {"path": str(output.resolve())}, ensure_ascii=False) + "")
+    print("File generated; learner visibility remains unconfirmed.")
     print("TEXT FALLBACK\n" + plain_text(request))
     return zs.EXIT_OK
 

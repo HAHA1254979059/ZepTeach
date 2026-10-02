@@ -16,6 +16,13 @@ demonstrated failure.
 
 **Start here, before reading anything else:**
 
+For an explicitly requested inline lab, experiment or decision with
+observable consequences, run `python scripts/route.py for interactive`.
+For an actual `[ZepTeach interaction]` message, follow that route's receipt
+step before interpreting the submitted events. Use the requested current
+activity rather than replacing it with an older course's review queue.
+For ordinary continuation, use the stored-state route below.
+
 ```
 python scripts/route.py next --said "<what the learner just asked for>"
 ```
@@ -57,6 +64,8 @@ turn costs money and buries the guidance that matters.
 | `setup2` | after the goal is fixed: what this course needs from this machine |
 | `lesson` | teach |
 | `exercise` | set and run exercises |
+| `interactive` | one requested inline experiment, prediction and real interaction receipt |
+| `feedback` | development handles scoped new learning feedback locally |
 | `grade` | judge an answer |
 | `review` | run due reviews and retests |
 | `sidequest` | fill a background gap without derailing the main thread |
@@ -106,6 +115,11 @@ count.
 - Learner input uses the routed interaction contract. Where conversation-inline
   controls can submit an answer, use them for condition questions, probes and
   exercises. Do not place floating choices over the lesson.
+- A responsive preview does not prove actual mobile display. Preserve the
+  current question and answer fields in the ordinary response; use the
+  interactive route's capability-based fallback if the learner reports a
+  blank or unusable client. A zero outcome and an unshown positive outcome
+  must remain distinguishable; visual marks cannot invent a success.
 - A concept may not be taken deeper than its `depth_target`.
 - An exercise without a grading spec may not be issued.
 - An anchored-tier item must cite its external source and source type.

@@ -1,0 +1,18 @@
+{
+  "$id": "feedback_receipt", "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "receipt_id", "timestamp_utc", "learning_thread_id", "event_id", "event_sha256", "status", "note", "evidence"],
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "receipt_id": {"type": "string", "minLength": 1},
+    "timestamp_utc": {"type": "string", "format": "date-time"},
+    "learning_thread_id": {"type": "string", "minLength": 1},
+    "event_id": {"type": "string", "minLength": 1},
+    "event_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "status": {"enum": ["implemented_tested", "waiting_for_learner", "needs_information", "out_of_scope"]},
+    "note": {"type": "string", "minLength": 1},
+    "evidence": {"type": "array", "items": {
+      "type": "object", "additionalProperties": false, "required": ["path", "sha256"],
+      "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}
+    }}
+  }
+}

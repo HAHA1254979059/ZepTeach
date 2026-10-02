@@ -19,6 +19,8 @@ them when they set up a course, and they live in the learning data root
 | `skills/zepteach/references/*.md` | teaching doctrine — method only |
 | `skills/zepteach/scripts/*.py` | state engine and gates |
 | `skills/zepteach/scripts/schemas/*.json` | shapes, no content |
+| `skills/zepteach/assets/interactive-*.html`, `interactive-*.js` | Subject-neutral interaction shell and runtime; no course or answers |
+| `skills/zepteach/assets/outcome-view.js` | Consistent full/partial outcome display; no subject or simulated answers |
 | `commands/`, `agents/`, `hooks/` | wiring |
 | `PHILOSOPHY.md`, `README.md`, this file | design record |
 
@@ -29,6 +31,7 @@ them when they set up a course, and they live in the learning data root
 | `skills/zepteach/tests/` | The example courses in the tests exist to check this plugin, not to be taught to anyone. Their purpose is to make code that assumes a particular subject fail during development. Shipping them would place a mathematics course and a history course inside a plugin whose whole design depends on knowing neither. |
 | `__pycache__/`, `.pytest_cache/` | files produced by running Python and the test runner; regenerated on any machine, and specific to the one that made them |
 | `feedback.md` | Private development feedback. Keep it local; do not commit, push, or include it in a plugin package. |
+| `.development/` | Private received-event files, receipt journals, browser previews and QA outputs. Never distribute or publish them. |
 | files written by a check that ran an external program | see rule 2 below |
 
 ## Two rules this file exists to enforce

@@ -55,12 +55,12 @@ def shipped_files():
     """Everything a learner would receive."""
     out = []
     for pattern in ("scripts/*.py", "scripts/schemas/*.json",
-                    "references/**/*.md", "SKILL.md"):
+                    "references/**/*.md", "assets/*.html", "assets/*.js", "SKILL.md"):
         out.extend(p for p in SKILL.glob(pattern) if p.is_file())
     out.extend(p for p in PLUGIN.glob("*.md") if p.is_file())
     for d in ("commands", "agents", "hooks"):
         out.extend(p for p in (PLUGIN / d).rglob("*") if p.is_file())
-    return [p for p in out if "tests" not in p.parts]
+    return [p for p in out if "tests" not in p.parts and p.name != "feedback.md"]
 
 
 class TestNoDisciplineInTheCore:
@@ -138,7 +138,7 @@ class TestNothingHasToBeInstalled:
         "subprocess", "tempfile", "shutil", "posixpath", "shlex",
         "unicodedata", "datetime", "pathlib", "collections", "xml",
         "__future__", "typing", "io", "csv", "itertools", "textwrap",
-        "hashlib",
+        "hashlib", "html",
     }
 
     def test_no_shipped_script_imports_anything_third_party(self):
@@ -185,7 +185,7 @@ class TestNoSyllabusShips:
     def test_no_course_or_curriculum_data_outside_the_tests(self):
         stray = []
         for path in PLUGIN.rglob("*.json"):
-            if "tests" in path.parts or "__pycache__" in path.parts:
+            if "tests" in path.parts or "__pycache__" in path.parts or ".development" in path.parts:
                 continue
             if path.parent.name == "schemas" or path.name in self.WIRING:
                 continue
@@ -205,6 +205,9 @@ class TestNoSyllabusShips:
             if not path.is_file() or "tests" in path.parts:
                 continue
             if "__pycache__" in path.parts or ".pytest_cache" in path.parts:
+                continue
+            if path.parent == SKILL / "assets" and path.name in {
+                    "interactive-lab.html", "interactive-runtime.js", "outcome-view.js"}:
                 continue
             if path.suffix not in allowed_suffix:
                 stray.append(path.relative_to(PLUGIN).as_posix())

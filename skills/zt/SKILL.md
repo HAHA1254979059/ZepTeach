@@ -10,7 +10,7 @@ directory, then read the sibling `../zepteach/SKILL.md` completely and follow
 its routing and teaching rules. The main skill holds the method; do not
 duplicate it here.
 
-Treat text after `/zt` as the learner's request. Run the main skill's
-`scripts/route.py next --said "<request>"`, using the configured learner data
-root. With no text, continue from the stored state. A nonzero exit is a
-refusal with a reason; do not work around it.
+Treat text after `/zt` as the learner's request and select the main skill's
+route for that request. With no text, continue from the stored state using
+`scripts/route.py next`. A nonzero exit is a refusal with a reason; do not
+work around it.

@@ -1,0 +1,30 @@
+{
+  "$id": "feedback_event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "event_id", "timestamp_utc", "learning_thread_id", "lab_id", "part_id", "event_type", "source", "actual_user_input", "observed_ui_behavior"],
+  "properties": {
+    "schema_version": {"const": 1, "type": "integer"},
+    "event_id": {"type": "string", "minLength": 1},
+    "timestamp_utc": {"type": "string", "format": "date-time"},
+    "learning_thread_id": {"type": "string", "minLength": 1},
+    "lab_id": {"type": "string", "minLength": 1},
+    "part_id": {"type": "string", "minLength": 1},
+    "event_type": {"enum": ["answer", "ui_action", "difficulty", "ui_feedback", "confidence", "completion_confirmation"]},
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "reference"],
+      "properties": {
+        "kind": {"enum": ["learner_message", "inline_control", "relayed_user_report"]},
+        "reference": {"type": "string", "minLength": 1}
+      }
+    },
+    "actual_user_input": {"type": "string", "minLength": 1},
+    "observed_ui_behavior": {"type": "string"},
+    "values": {"type": "object"},
+    "confidence_if_supplied": {"type": "number", "minimum": 0, "maximum": 100},
+    "knowledge_points": {"type": "array", "items": {"type": "string"}},
+    "error_cause_if_known": {"type": "string"},
+    "artifact_path_if_exists": {"type": "string", "minLength": 1}
+  }
+}

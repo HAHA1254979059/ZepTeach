@@ -185,3 +185,13 @@ fix, and identify the source conversation or document. This file is local and
 private: it is ignored by Git, must never be staged or pushed, and must not
 be included in a plugin distribution. Read it when working on relevant
 development issues. Do not copy its private details into tracked files.
+
+For an explicitly authorized learning feedback chain, use `route.py for
+feedback` and `feedback.py pending` with the exact learning thread ID. Keep
+the development receipts and QA output under ignored `.development/` or the
+authorized learning data root. Capture real user reports separately from
+developer observations and test operations. Verify the file, browser behavior,
+actual final-message reference and learner visibility separately. Do not
+publish, install or message another task unless the current authorization
+includes that action. Feedback handling never advances a lab or changes a
+grade or mastery record.

@@ -34,6 +34,22 @@ REF_DIR = Path(__file__).resolve().parents[1] / "references"
 
 # Each route: what to read, what to run, and what NOT to pull in yet.
 ROUTES = {
+    "interactive": {
+        "what": "one requested inline experiment or decision, with real feedback",
+        "read": ["interactive-learning.md", "interaction-contract.md"],
+        "run": ["presentation.py --spec <step.json> (add actual client evidence when available)",
+                "interactive_lab.py build --root <data-root> --spec <step.json> --scene <scene.html> --fragment <simulation.html> --script <simulation.js>",
+                "interactive_lab.py verify-qa --artifact <absolute.html> --qa-report <browser-qa.json> (before the inline reference)",
+                "interactive_lab.py check-delivery --artifact <absolute.html> --reply-file <actual-final-response.txt>",
+                "feedback.py --root <data-root> --thread-id <exact-id> ingest --message-file <received-message.txt>"],
+        "defer": "only the current part; no scored or completion record without actual learner evidence",
+    },
+    "feedback": {
+        "what": "handle new authorized learning feedback locally",
+        "read": ["interactive-learning.md"],
+        "run": ["feedback.py --root <authorized-root> --thread-id <exact-id> --receipts <private-receipts.jsonl> pending"],
+        "defer": "no other private data, task messages, installation or publication",
+    },
     "setup1": {
         "what": "first-time setup: one question, then start",
         "read": ["setup-stage1.md", "persona-zep.md", "interaction-contract.md"],
@@ -246,7 +262,7 @@ def alternatives(st: dict, courses: list) -> list:
     here, and whoever read the sentence picks. That works the same on every
     host and does not need a second command for each case.
     """
-    out = []
+    out = [{"intent": "interactive", "when": "the learner explicitly asks for an inline experiment, lab or decision with observable consequences; select their requested current material rather than the default old lesson"}]
     if courses:
         out.append({
             "intent": "replan",
