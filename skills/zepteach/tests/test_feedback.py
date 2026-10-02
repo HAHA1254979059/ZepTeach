@@ -99,3 +99,10 @@ def test_ingestion_requires_received_packet_and_does_not_infer_confidence(tmp_pa
         fb.packet_events('{"draft": "answer"}', "learning-one")
     with pytest.raises(ValueError):
         fb.packet_events(packet, "private-other")
+
+
+def test_historical_references_remain_readable_after_moving_between_hosts(tmp_path):
+    rows = [event('windows', artifact_path_if_exists='Q:\\old-host\\view.html'),
+            event('posix', artifact_path_if_exists='/old-host/view.html')]
+    fb.append_rows(tmp_path / fb.EVENT_LOG, rows, 'event_id')
+    assert fb.pending(tmp_path, 'learning-one', tmp_path / 'receipts.jsonl')['events'] == rows

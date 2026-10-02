@@ -14,7 +14,7 @@ import json
 import os
 import sys
 from datetime import datetime, timezone
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 import zt_state as zs
 
@@ -59,9 +59,11 @@ def check_event(event: dict, thread_id: str, check_artifact: bool = True):
     if when.utcoffset() is None or when.utcoffset().total_seconds() != 0:
         raise ValueError("feedback time must be UTC")
     artifact = event.get("artifact_path_if_exists")
-    if artifact and (not Path(artifact).is_absolute() or
-                     (check_artifact and not Path(artifact).is_file())):
-        raise ValueError("feedback artifact must be an existing absolute file")
+    if artifact:
+        if check_artifact and (not Path(artifact).is_absolute() or not Path(artifact).is_file()):
+            raise ValueError("feedback artifact must be an existing absolute file")
+        if not check_artifact and not (PurePosixPath(artifact).is_absolute() or PureWindowsPath(artifact).is_absolute()):
+            raise ValueError("historical artifact reference must be absolute on its originating host")
 
 
 def append_rows(path: Path, rows: list, key: str):
