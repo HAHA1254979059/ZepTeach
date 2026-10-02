@@ -131,21 +131,38 @@ def packet_events(text: str, thread_id: str):
     return packet["events"]
 
 
-def scoped_events(root: Path, thread_id: str):
+def scan_source(root: Path, thread_id: str):
     events = {}
-    for event in read_rows(root / EVENT_LOG):
+    seen = {}
+    issues = []
+    for line, event in enumerate(read_rows(root / EVENT_LOG), 1):
         if event.get("learning_thread_id") != thread_id:
             continue
-        check_event(event, thread_id, check_artifact=False)
-        identity = event["event_id"]
-        if identity in events and events[identity] != event:
+        identity = event.get("event_id")
+        has_identity = isinstance(identity, str) and bool(identity)
+        if has_identity and identity in seen and seen[identity] != event:
             raise ValueError("conflicting event identity")
+        if has_identity:
+            seen[identity] = event
+        try:
+            check_event(event, thread_id, check_artifact=False)
+        except (ValueError, TypeError, KeyError) as error:
+            # Preserve unknown/older records. Never invent provenance or
+            # quietly relabel them, and do not let them block valid events.
+            issues.append({"line":line, "event_id":identity if has_identity else None,
+                           "event_type":event.get("event_type"),
+                           "row_sha256":digest(event), "error":str(error)})
+            continue
         events[identity] = event
-    return events
+    return events, issues
+
+
+def scoped_events(root: Path, thread_id: str):
+    return scan_source(root, thread_id)[0]
 
 
 def pending(root: Path, thread_id: str, receipts: Path, limit: int = 20):
-    events = scoped_events(root, thread_id)
+    events, issues = scan_source(root, thread_id)
     handled = set()
     for row in read_rows(receipts):
         if row.get("learning_thread_id") != thread_id:
@@ -159,7 +176,8 @@ def pending(root: Path, thread_id: str, receipts: Path, limit: int = 20):
         handled.add(row["event_id"])
     unseen = [event for identity, event in events.items() if identity not in handled]
     return {"learning_thread_id": thread_id, "unhandled_count": len(unseen),
-            "events": unseen[:limit]}
+            "events": unseen[:limit], "source_issues":issues,
+            "requires_source_attention":bool(issues)}
 
 
 def record_receipt(root: Path, thread_id: str, receipts: Path,
@@ -221,6 +239,7 @@ def main(argv=None):
         elif args.command == "receipt":
             result = {"appended": record_receipt(root, args.thread_id, receipts,
                       args.event_id, args.status, args.note, args.evidence)}
+            result["source_issues"] = scan_source(root, args.thread_id)[1]
         else:
             if args.command == "append":
                 events = [json.loads(Path(args.file).read_text(encoding="utf-8"))]

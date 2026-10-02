@@ -217,6 +217,14 @@ it. `implemented_tested` needs a concrete QA file; `waiting_for_learner`
 records that visibility or usability still needs actual user evidence.
 Identical receipts are idempotent. New user reports create new events.
 
+`source_issues` separately reports scoped records in an unknown or incomplete
+format. Those records stay unchanged and receive no ordinary handling receipt
+until actual source evidence establishes a canonical event. Valid records
+remain processable; missing provenance must not be invented and an unconfirmed
+record must not silently disappear. Conflicting event IDs and a torn journal
+still refuse processing. `requires_source_attention` is not a completion or
+grade signal, even when the valid-event backlog is empty.
+
 Trace each problem through selection, artifact generation, reference,
 interaction receipt and logging before deciding the fix. Test the same
 mechanism on a different interaction, not only the reported example. Keep

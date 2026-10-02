@@ -106,3 +106,22 @@ def test_historical_references_remain_readable_after_moving_between_hosts(tmp_pa
             event('posix', artifact_path_if_exists='/old-host/view.html')]
     fb.append_rows(tmp_path / fb.EVENT_LOG, rows, 'event_id')
     assert fb.pending(tmp_path, 'learning-one', tmp_path / 'receipts.jsonl')['events'] == rows
+
+
+def test_an_unconfirmed_format_is_reported_without_blocking_valid_feedback(tmp_path):
+    valid = event()
+    unknown = event('older-format', event_type='learner_answer')
+    del unknown['source']
+    fb.append_rows(tmp_path / fb.EVENT_LOG, [valid, unknown], 'event_id')
+    before = (tmp_path / fb.EVENT_LOG).read_bytes()
+    result = fb.pending(tmp_path, 'learning-one', tmp_path / 'receipts.jsonl')
+    assert result['events'] == [valid]
+    assert result['requires_source_attention'] is True
+    assert result['source_issues'][0]['event_id'] == 'older-format'
+    assert 'source' in result['source_issues'][0]['error']
+    assert fb.record_receipt(tmp_path, 'learning-one', tmp_path / 'receipts.jsonl',
+                             'e1', 'needs_information', 'Verified feedback only', []) == 1
+    with pytest.raises(ValueError):
+        fb.record_receipt(tmp_path, 'learning-one', tmp_path / 'receipts.jsonl',
+                          'older-format', 'needs_information', 'Do not invent a source', [])
+    assert (tmp_path / fb.EVENT_LOG).read_bytes() == before
